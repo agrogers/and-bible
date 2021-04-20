@@ -216,6 +216,10 @@ export function useAndroid({bookmarks}, config) {
         android.deleteJournalEntry(journalId);
     }
 
+    function getActiveLanguages() {
+        return JSON.parse(android.getActiveLanguages());
+    }
+
     function removeBookmarkLabel(bookmarkId, labelId) {
         android.removeBookmarkLabel(bookmarkId, labelId);
     }
@@ -287,6 +291,7 @@ export function useAndroid({bookmarks}, config) {
         removeBookmarkLabel,
         updateOrderNumber,
         updateJournalEntry,
+        getActiveLanguages,
         toast,
         shareBookmarkVerse,
         openStudyPad,
