@@ -337,8 +337,7 @@ export function useCommon() {
     }
 
     function formatTimestamp(timestamp) {
-        let options = { year:'numeric', month:'numeric', day: 'numeric', hour:'numeric',minute:'2-digit' };
-        return new Date(timestamp).toLocaleString([],options)
+        return new Date(timestamp).toLocaleString()
     }
 
     return {config, appSettings, calculatedConfig, strings, sprintf, split,
