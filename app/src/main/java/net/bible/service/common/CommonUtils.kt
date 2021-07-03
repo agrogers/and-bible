@@ -29,15 +29,20 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager.NameNotFoundException
 import android.content.res.Configuration
 import android.content.res.Resources
+import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Environment
 import android.os.StatFs
 import android.text.Html
+import android.text.SpannableString
 import android.text.SpannableStringBuilder
+import android.text.Spanned
 import android.text.method.LinkMovementMethod
+import android.text.style.ImageSpan
 import android.util.Log
 import android.widget.EditText
 import android.widget.TextView
+import androidx.core.content.res.ResourcesCompat
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -84,6 +89,24 @@ import java.security.spec.X509EncodedKeySpec
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
+
+fun htmlToSpan(html: String): Spanned {
+    val spanned = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY)
+    } else {
+        Html.fromHtml(html)
+    }
+    return spanned
+}
+
+const val textDisplaySettingsVideo = "https://youtu.be/rz0zyEK9qBk"
+const val pinningHelpVideo = "https://youtu.be/27b1g-D3ibA"
+const val bookmarksMyNotesVideo = "https://www.youtube.com/watch?v=ZpZ25uqR_BY&t=90s" // beta 3.4 video
+const val studyPadsVideo = "https://www.youtube.com/watch?v=ZpZ25uqR_BY&t=652s" // beta 3.4 video
+const val workspacesVideo = "https://youtu.be/rz0zyEK9qBk"
+const val beta34introVideo = "https://www.youtube.com/watch?v=ZpZ25uqR_BY" // For 3.4 beta intro
+const val speakHelpVideo = "https://youtu.be/_wWnS-pjv2A"
+const val automaticSpeakBookmarkingVideo = "https://www.youtube.com/watch?v=1HFXLeTERcs"
 
 
 val BookmarkEntities.Label.displayName get() =
@@ -353,6 +376,24 @@ object CommonUtils {
         } else {
             resources.getColor(resourceId)
         }
+
+    fun getResourceDrawable(resourceId: Int, context: Context? = null): Drawable? {
+        val theme = try {
+            mainBibleActivity.theme
+        } catch (e: NullPointerException) {
+            resources.newTheme().apply {
+                applyStyle(R.style.AppTheme, true)
+            }
+        }
+        return ResourcesCompat.getDrawable(context?.resources?:resources, resourceId, theme)
+    }
+
+    fun getTintedDrawable(res: Int, color: Int = R.color.grey_500): Drawable {
+        val d = getResourceDrawable(res)!!
+        d.mutate().setTint(getResourceColor(color))
+        d.setBounds(0, 0, d.intrinsicWidth, d.intrinsicHeight)
+        return d
+    }
 
     /**
      * convert dip measurements to pixels
@@ -683,11 +724,11 @@ object CommonUtils {
         val help = listOf(
             HelpItem(R.string.help_nav_title, R.string.help_nav_text),
             HelpItem(R.string.help_contextmenus_title, R.string.help_contextmenus_text),
-            HelpItem(R.string.help_window_pinning_title, R.string.help_window_pinning_text, "https://youtu.be/27b1g-D3ibA"),
-            HelpItem(R.string.help_bookmarks_title, R.string.help_bookmarks_text, "https://www.youtube.com/watch?v=ZpZ25uqR_BY&t=90s"), // beta video
-            HelpItem(R.string.help_studypads_title, R.string.help_studypads_text, "https://www.youtube.com/watch?v=ZpZ25uqR_BY&t=652s"), // beta video
+            HelpItem(R.string.help_window_pinning_title, R.string.help_window_pinning_text, pinningHelpVideo),
+            HelpItem(R.string.help_bookmarks_title, R.string.help_bookmarks_text, bookmarksMyNotesVideo), // beta video
+            HelpItem(R.string.help_studypads_title, R.string.help_studypads_text, studyPadsVideo), // beta video
             HelpItem(R.string.help_search_title, R.string.help_search_text),
-            HelpItem(R.string.help_workspaces_title, R.string.help_workspaces_text, "https://youtu.be/rz0zyEK9qBk"),
+            HelpItem(R.string.help_workspaces_title, R.string.help_workspaces_text, workspacesVideo),
             HelpItem(R.string.help_hidden_features_title, R.string.help_hidden_features_text)
         ).run {
             if(filterItems != null) {

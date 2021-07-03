@@ -145,7 +145,10 @@ export function useAndroid({bookmarks}, config) {
 
         const deleteBookmarks = union(filteredBookmarks.map(b => b.id));
 
-        return {bookInitials, startOrdinal, startOffset, endOrdinal, endOffset, bookmarks: deleteBookmarks};
+        return {
+            bookInitials, startOrdinal, startOffset, endOrdinal, endOffset, bookmarks: deleteBookmarks,
+            text: selection.toString()
+        };
     }
 
     window.bibleView.response = response;
@@ -204,8 +207,8 @@ export function useAndroid({bookmarks}, config) {
         android.openExternalLink(link);
     }
 
-    function setActionMode(value) {
-        android.setActionMode(value);
+    function setEditing(value) {
+        android.setEditing(value);
     }
 
     function createNewJournalEntry(labelId, afterEntryType = "none", afterEntryId = 0) {
@@ -214,6 +217,10 @@ export function useAndroid({bookmarks}, config) {
 
     function deleteJournalEntry(journalId) {
         android.deleteJournalEntry(journalId);
+    }
+
+    function getActiveLanguages() {
+        return JSON.parse(android.getActiveLanguages());
     }
 
     function removeBookmarkLabel(bookmarkId, labelId) {
@@ -230,6 +237,10 @@ export function useAndroid({bookmarks}, config) {
 
     function openMyNotes(bookmarkId) {
         android.openMyNotes(bookmarkId);
+    }
+
+    function openDownloads() {
+        android.openDownloads();
     }
 
     function updateOrderNumber(labelId, bookmarks, journals) {
@@ -275,7 +286,7 @@ export function useAndroid({bookmarks}, config) {
     }
 
     const exposed = {
-        setActionMode,
+        setEditing,
         reportInputFocus,
         saveBookmarkNote,
         requestPreviousChapter,
@@ -291,6 +302,7 @@ export function useAndroid({bookmarks}, config) {
         removeBookmarkLabel,
         updateOrderNumber,
         updateJournalEntry,
+        getActiveLanguages,
         toast,
         shareBookmarkVerse,
         openStudyPad,
@@ -300,10 +312,13 @@ export function useAndroid({bookmarks}, config) {
         setBookmarkWholeVerse,
         toggleCompareDocument,
         openMyNotes,
+        openDownloads,
     }
 
     if(config.developmentMode) return {
-        ...stubsFor(exposed),
+        ...stubsFor(exposed, {
+            getActiveLanguages: ['he', 'nl', 'en'],
+        }),
         querySelection
     }
 

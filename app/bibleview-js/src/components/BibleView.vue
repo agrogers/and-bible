@@ -34,7 +34,7 @@
       <div class="bottom-right-corner"/>
     </div>
     <div id="top"/>
-    <div class="loading" v-if="documents.length === 0"><div class="lds-ring"><div></div><div></div><div></div><div></div></div></div>
+    <div class="loading" v-if="isLoading"><div class="lds-ring"><div></div><div></div><div></div><div></div></div></div>
     <div id="content" ref="topElement" :style="contentStyle">
       <div style="position: absolute; top: -5000px;" v-if="documents.length === 0">Invisible element to make fonts load properly</div>
       <Document v-for="document in documents" :key="document.id" :document="document"/>
@@ -61,7 +61,7 @@ import {useGlobalBookmarks} from "@/composables/bookmarks";
 import {emit, Events, setupEventBusListener} from "@/eventbus";
 import {useScroll} from "@/composables/scroll";
 import {clearLog, useAndroid} from "@/composables/android";
-import {setupWindowEventListener} from "@/utils";
+import {setupWindowEventListener, waitNextAnimationFrame} from "@/utils";
 import ErrorBox from "@/components/ErrorBox";
 import BookmarkModal from "@/components/modals/BookmarkModal";
 import DevelopmentMode from "@/components/DevelopmentMode";
@@ -105,15 +105,25 @@ export default {
     const {currentVerse} = useVerseNotifier(config, calculatedConfig, mounted, android, topElement, scroll);
     const customCss = useCustomCss();
     provide("customCss", customCss);
-    const customFeatures = useCustomFeatures();
+    const customFeatures = useCustomFeatures(android);
     provide("customFeatures", customFeatures);
 
     useInfiniteScroll(android, documents);
+    const loadingCount = ref(0);
 
     function addDocuments(...docs) {
-      documentPromise.value = document.fonts.ready
-        .then(() => nextTick())
-        .then(() => documents.push(...docs));
+      async function doAddDocuments() {
+        loadingCount.value ++;
+        await document.fonts.ready;
+        await nextTick();
+        // 2 animation frames seem to make sure that loading indicator is visible.
+        await waitNextAnimationFrame();
+        await waitNextAnimationFrame();
+        documents.push(...docs);
+        await nextTick();
+        loadingCount.value --;
+      }
+      documentPromise.value = doAddDocuments()
     }
 
     setupEventBusListener(Events.CONFIG_CHANGED, async (deferred) => {
@@ -226,10 +236,12 @@ export default {
       verseMap.resetHighlights();
     }
 
+    const isLoading = computed(() => documents.length === 0 || loadingCount.value > 0);
+
     return {
       makeBookmarkFromSelection: globalBookmarks.makeBookmarkFromSelection,
       updateBookmarks: globalBookmarks.updateBookmarks, ambiguousSelection,
-      config, strings, documents, topElement, currentVerse, mounted, emit, Events,
+      config, strings, documents, topElement, currentVerse, mounted, emit, Events, isLoading,
       contentStyle, backgroundStyle, modalStyle, topStyle, calculatedConfig, appSettings, backClicked,
     };
   },
@@ -238,7 +250,7 @@ export default {
 <style lang="scss" scoped>
 $ring-size: 40px;
 .loading {
-  position: absolute;
+  position: fixed;
   left: calc(50% - #{$ring-size}/2);
   top: calc(50% - #{$ring-size}/2);
 }
