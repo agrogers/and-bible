@@ -482,11 +482,11 @@ function useParsers(android) {
 
     async function loadParser(lang) {
         console.log(`Loading parser for ${lang}`)
-        const url = `/features/RefParser/${lang}_BcvParser.js`
+        const url = `/features/RefParser/${lang}_bcv_parser.js`
         const content = await (await fetch(url)).text();
         const module = {}
         Function(content).call(module)
-        return new module.BcvParser;
+        return new module["bcv_parser"];
     }
 
     async function initialize() {
@@ -505,8 +505,8 @@ function useParsers(android) {
     function parse(text) {
         let parsed = ""
         //Try each of the parsers until one succeeds
-        parsers.some(BcvParser => {
-            parsed = BcvParser.parse(text).osis();
+        parsers.some(parser => {
+            parsed = parser.parse(text).osis();
             if (parsed !== "") return true
         })
         return parsed;
@@ -525,11 +525,16 @@ export function useCustomFeatures(android) {
 
     // eslint-disable-next-line no-unused-vars
     async function reloadFeatures(featureModuleNames) {
-         if(featureModuleNames.includes("RefParser")) {
-             await initialize();
-             features.add("RefParser");
+        features.clear();
+        if(featureModuleNames.includes("RefParser")) {
+            await initialize();
+            features.add("RefParser");
         }
     }
+
+    setupEventBusListener(Events.RELOAD_ADDONS, ({featureModuleNames}) => {
+        reloadFeatures(featureModuleNames)
+    })
 
     onBeforeMount(() => {
         const featureModuleNames = new URLSearchParams(window.location.search).get("featureModuleNames");
