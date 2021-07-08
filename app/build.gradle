@@ -116,6 +116,7 @@ android {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             zipAlignEnabled true
+            applicationIdSuffix 'agr'
         }
         debug {
             def propsFile = rootProject.file('local.properties')

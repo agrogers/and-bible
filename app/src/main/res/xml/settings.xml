@@ -41,7 +41,31 @@
 			android:summary="@string/auto_fullscreen_summary"
 			android:defaultValue="false"
 			/>
-
+		<SwitchPreferenceCompat android:key="full_screen_hide_buttons_pref"
+			android:title="@string/full_screen_hide_buttons_pref_title"
+			android:summary="@string/full_screen_hide_buttons_pref_summary"
+			android:defaultValue="true"
+			/>
+		<SwitchPreferenceCompat android:key="hide_window_buttons"
+			android:title="@string/hide_window_buttons_title"
+			android:summary="@string/hide_window_buttons_summary"
+			android:defaultValue="false"
+			/>
+		<SwitchPreferenceCompat android:key="hide_bible_reference_overlay"
+			android:title="@string/hide_bible_reference_overlay_title"
+			android:summary="@string/hide_bible_reference_overlay_summary"
+			android:defaultValue="false"
+			/>
+		<SwitchPreferenceCompat android:key="show_active_window_indicator"
+			android:title="@string/active_window_indicator_title"
+			android:summary="@string/active_window_indicator_summary"
+			android:defaultValue="true"
+			/>
+		<SwitchPreferenceCompat android:key="highlight_active_window_button"
+			android:title="@string/active_window_button_highlight_title"
+			android:summary="@string/active_window_button_highlight_summary"
+			android:defaultValue="true"
+			/>
 		<ListPreference android:key="toolbar_button_actions"
 			android:title="@string/prefs_toolbar_button_action_title"
 			android:summary="@string/prefs_toolbar_button_action_summary"

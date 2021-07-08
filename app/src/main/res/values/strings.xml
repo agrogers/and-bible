@@ -4,8 +4,8 @@
  @author Martin Denham [mjdenham at gmail dot com]
 -->
 <resources>
-    <string name="app_name_short">Bible Study</string>
-    <string name="app_name_medium">Bible Study (And Bible)</string>
+    <string name="app_name_short">The Study Bible</string>
+    <string name="app_name_medium">The Study Bible (And Bible)</string>
     <string name="app_name_long">Bible Study app, by And Bible Open Source Project</string>
     <string name="project">And Bible Open Source Project</string>
 
@@ -835,6 +835,8 @@
     <string name="prefs_show_error_box_summary">Useful for developers when debugging BibleView javascript side errors. This will make the app slower.</string>
     <string name="active_window_indicator_title">Show active window indicator</string>
     <string name="active_window_indicator_summary">Highlight window corners to help recognising which window is active</string>
+    <string name="active_window_button_highlight_title">Highlight active window</string>
+    <string name="active_window_button_highlight_summary">Shows the active window button in a vibrant colour.</string>
     <string name="app_licence_title">Open Source License</string>
 
     <string name="how_to_contribute">How to contribute?</string>
