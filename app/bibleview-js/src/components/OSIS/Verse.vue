@@ -135,9 +135,24 @@ export default {
 }
 
 .isHighlighted {
-  background-color: rgba(255, 230, 0, 0.4);
+//  background-color: rgba(255, 230, 0, 0.4);
+
+  // Shows an outline around the verse
+  outline-color: rgba(255, 230, 0, 0.9);;
+  outline-width: 3px;
+  outline-style: solid;
+  padding: .2em .4em;
+
+//  // Show's a side border but forces verse to be on a single line
+//  border-left-style: solid;
+//  border-left-width: 10px;
+//  border-left-color: rgb(255,230,0);
+//  margin-left: -4px;
+//  padding-left: -6px;
+//  display: block;
+
   .night & {
-    background-color: rgba(255, 230, 0, 0.6);
+    background-color: rgba(0, 230, 0, 0.6);
   }
 }
 </style>
