@@ -131,4 +131,11 @@ export default {
     border-color: rgba(255, 255, 255, 0.6);
   }
 }
+
+.menu {
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 1;
+}
 </style>

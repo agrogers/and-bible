@@ -177,7 +177,6 @@ export default {
     const divider = {divider: true};
 
     function openDownloads() {
-      showHelp.value = false;
       android.openDownloads();
     }
 
@@ -231,19 +230,9 @@ export default {
   }
   &.end {
     position: absolute;
-    [dir=ltr] & {
-      right: 0;
-    }
-    [dir=rtl] & {
-      left: 0;
-    }
+    right: 0;
     .studypad-text-entry & {
-      [dir=ltr] & {
-        right: 40px;
-      }
-      [dir=rtl] & {
-        left: 40px;
-      }
+      right: 40px;
     }
   }
 }

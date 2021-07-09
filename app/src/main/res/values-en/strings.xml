@@ -1,6 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
-  <string name="app_name_medium">Bible Study app (And Bible)</string>
   <!--Main menu-->
   <!--Passage navigation-->
   <!--Search-->
@@ -39,7 +38,6 @@
   <!--Speak - Dictionary and other-->
   <!--Speak - Common-->
   <!--Speak - Bible-->
-  <!--parameter is ether setting_scope_window or setting_scope_workspace-->
   <!--param is bookmark icon-->
   <!--param is auto-assign label icon-->
   <!--param is heart icon-->

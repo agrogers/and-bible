@@ -595,8 +595,7 @@ class BibleView(val mainBibleActivity: MainBibleActivity,
 
      fun onEvent(e: ReloadAddonsEvent) {
         val fontModuleNames = json.encodeToString(serializer(), AndBibleAddons.fontModuleNames)
-        val featureModuleNames = json.encodeToString(serializer(), AndBibleAddons.featureModuleNames)
-        executeJavascriptOnUiThread("bibleView.emit('reload_addons', {fontModuleNames: $fontModuleNames, featureModuleNames: $featureModuleNames});")
+        executeJavascriptOnUiThread("bibleView.emit('reload_addons', {fontModuleNames: $fontModuleNames});")
     }
 
     override fun destroy() {
@@ -1046,7 +1045,7 @@ class BibleView(val mainBibleActivity: MainBibleActivity,
         var isOkay = true
         if (window.pageManager.isMapShown) {
             // allow swipe right if at right side of map
-            val isAtRightEdge = if(CommonUtils.isRtl) scrollX == 0 else scrollX >= maxHorizontalScroll
+            val isAtRightEdge = scrollX >= maxHorizontalScroll
 
             // the first side swipe takes us to the edge and second takes us to next page
             isOkay = isAtRightEdge && wasAtRightEdge
@@ -1061,7 +1060,7 @@ class BibleView(val mainBibleActivity: MainBibleActivity,
         var isOkay = true
         if (window.pageManager.isMapShown) {
             // allow swipe left if at left edge of map
-            val isAtLeftEdge = if(!CommonUtils.isRtl) scrollX == 0 else scrollX >= maxHorizontalScroll
+            val isAtLeftEdge = scrollX == 0
 
             // the first side swipe takes us to the edge and second takes us to next page
             isOkay = isAtLeftEdge && wasAtLeftEdge

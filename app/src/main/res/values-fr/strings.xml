@@ -2,7 +2,7 @@
 <resources>
   <string name="app_name_short">Bible Study</string>
   <string name="app_name_medium">Bible Study (And Bible)</string>
-  <string name="app_name_long">Bible Study app, du projet à code source ouvert And Bible</string>
+  <string name="app_name_long">Bible Study app, du projet opensource And Bible</string>
   <string name="project">Projet Open source And Bible</string>
   <string name="version_text">Version %s</string>
   <string name="no_sdcard_error">Merci d\'insérer une carte SD et de redémarrer l\'application.</string>
@@ -207,7 +207,6 @@
   <string name="strongs_not_installed">Merci de télécharger un lexique Hébreu/Araméen et Grec de Strong</string>
   <string name="no_indexed_bible_with_strongs_ref">Merci de télécharger une bible contenant les codes de Strong,  puis de télécharger son index via la page Rechercher</string>
   <string name="morph_robinson_not_installed">Merci de télécharger le lexique « Robinson\'s Morphological Analysis Codes »</string>
-  <string name="go_to_downloads">Aller au téléchargements</string>
   <!--Module download-->
   <string name="download">Télécharger des documents</string>
   <string name="redownload">Retélécharger les documents</string>
@@ -411,33 +410,13 @@ Avec l\'aimable autorisation de Wholesome Words, http://www.wholesomewords.org/<
   <string name="speak_status_stopped">arrêt</string>
   <string name="speak_autobookmarking_disabled">Mise en signet automatique désactivée! </string>
   <string name="system_speak_settings">Paramètres de la synthèse vocale</string>
-  <string name="auto_assing_labels_help1">Vous pouvez régler ici les étiquettes qui sont attribuées automatiquement aux signets que vous créez.</string>
-  <!--parameter is ether setting_scope_window or setting_scope_workspace-->
-  <string name="setting_scope">Ce paramètre s\'applique à %s.</string>
-  <string name="setting_scope_window">cette fenêtre</string>
-  <string name="setting_scope_workspace">cet espace</string>
-  <string name="assing_labels_help1">Plusieurs étiquettes peuvent être attribuées à chaque signet.</string>
   <!--param is bookmark icon-->
-  <string name="assing_labels_help2">Utilisez %s pour spécifier la couleur de l\'étiquette à afficher.</string>
   <!--param is auto-assign label icon-->
-  <string name="assing_labels_help3">Tapez l\'icône %s  pour que l\'étiquette soit automatiquement attribuée aux nouveaux signets.</string>
   <!--param is heart icon-->
-  <string name="assing_labels_help4">Tapez %s pour ajouter l\'étiquette à votre liste de favoris pour un accès rapide.</string>
   <!--param is refresh icon-->
-  <string name="assing_labels_help5">Tapez %s pour réorganiser la liste en fonction de vos sélections.</string>
-  <string name="workspace_text_options_help_title">Options de texte de l\'espace de travail</string>
-  <string name="workspace_text_options_help1">Ces paramètres déterminent la valeur par défaut de toutes les fenêtres de l\'espace de travail.</string>
-  <string name="workspace_text_options_help2">Vous pouvez les annuler en modifiant les paramètres de chaque fenêtre.</string>
-  <string name="window_text_options_help_title">Options de texte des fenêtres</string>
   <!--Parameter is actual icon-->
-  <string name="window_text_options_help1">L\'icône %s indique que ce paramètre provient des paramètres de l\'espace de travail.</string>
   <!--Parameter is actual icon-->
-  <string name="window_text_options_help2">l\'icône%s  indique que ce paramètre a été modifié pour cette fenêtre spécifique.</string>
-  <string name="window_text_options_help3">Le paramètre de l\'espace de travail n\'affectera pas cette fenêtre.</string>
   <!--First parameter is actual icon. Second parameter is either "default values" or "workspace default values"-->
-  <string name="text_options_reset_help">Utilisez le bouton %s pour réinitialiser tous ces paramètres à l\'état initial %s.</string>
-  <string name="reset_defaults">Valeurs par défaut</string>
-  <string name="reset_workspace_defaults">Valeur par défaut des espaces</string>
   <string name="speak_bookmark_help">Aide des signets audio</string>
   <string name="speak_help_auto_bookmark">
 Un Signet audio est automatiquement généré lorsque la Lecture audio est mise sur pause ou arrétée. Ces signets ont pour label Lecture audio.
@@ -521,8 +500,6 @@ Le fichier est peut-être invalide.</string>
   <string name="module_about_repository">Serveur de distribution : %s</string>
   <string name="module_about_osisId">OSIS ID : %s</string>
   <!--Bug reporting-->
-  <string name="send_bug_report_title1">Reporter un bogue</string>
-  <string name="send_feedback_title">Commentaires</string>
   <string name="send_bug_report_title">Commentaire / rapport de bogue</string>
   <string name="report_bug_email_subject_3">[%s] Rapport de bogues pour %s %s</string>
   <string name="report_bug_big_heading">VEUILLEZ ÉCRIRE VOS COMMENTAIRES OU VOTRE RAPPORT DE BOGUE AU-DESSUS DE CETTE LIGNE.</string>
@@ -705,7 +682,7 @@ documents supplémentaires lorsque vous étudiez la Bible.</string>
   <string name="prefs_show_error_box_summary">Utile pour les développeurs lors du débogage des erreurs javascript de BibleView. Cela rendra l\'application plus lente.</string>
   <string name="active_window_indicator_title">Afficher l\'indicateur de la fenêtre active</string>
   <string name="active_window_indicator_summary">Mise en évidence des coins de fenêtre pour aider à reconnaître la fenêtre active</string>
-  <string name="app_licence_title">Licence à code source ouvert</string>
+  <string name="app_licence_title">Licence Open Source</string>
   <string name="how_to_contribute">Comment contribuer ?</string>
   <string name="confirm_delete_bookmarks">Voulez-vous supprimer les signets %d et leurs notes ?</string>
   <string name="module_size_megabytes">%.1f MB</string>
@@ -734,7 +711,7 @@ documents supplémentaires lorsque vous étudiez la Bible.</string>
   <string name="proceed_anyway">Accéder malgré tout</string>
   <string name="rate_title">Évaluation et révision de l\'application</string>
   <string name="rate_message5">
-         Les critiques positives et détaillées aident beaucoup le projet à code source ouvert And Bible. Merci !
+         Les critiques positives et détaillées aident beaucoup le projet Open Source And Bible. Merci !
     </string>
   <string name="rate_message6">
      Avant d\'examiner un avis négatif, veuillez prendre en compte les éléments suivants :
@@ -820,8 +797,4 @@ Si un texte particulier n\'est pas disponible dans l\'application, %s.
   <string name="incomplete_translation">Nous sommes désolés, mais nous n\'avons qu\'une traduction partielle de l\'interface utilisateur en langue %s. C\'est parce que %s est entièrement développé par des volontaires. Si vous pouvez aider à la traduction, veuillez voir %s.</string>
   <!--will be added to incomplete_translation as a link-->
   <string name="instructions_for_translators">instructions pour les traducteurs</string>
-  <string name="questions_title">Questions ?</string>
-  <string name="questions_title2">Besoin d\'aide ?</string>
-  <string name="bookmark_style">Style du signet</string>
-  <string name="added_to_bookmark">Assigner à ce signet</string>
 </resources>

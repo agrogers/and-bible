@@ -535,30 +535,22 @@ class SplitBibleArea: FrameLayout(mainBibleActivity) {
         if(firstTime) {
             firstTime = false
         }
-        val isRtl = CommonUtils.isRtl
-        binding.apply {
-            val screenWidth = biblesLinearLayout.width
-            val transX =
-                if(isRtl)
-                    (if (restoreButtonsVisible) 0 else
-                        -restoreButtonsContainer.width + (hideRestoreButton.width + hideRestoreButtonExtension.width)
-                        ).toFloat() + mainBibleActivity.leftOffset1
-                else
-                    (if (restoreButtonsVisible) 0 else
-                        restoreButtonsContainer.width - (hideRestoreButton.width + hideRestoreButtonExtension.width)
-                        ).toFloat() - mainBibleActivity.rightOffset1
-            Log.d(TAG, "updateRestoreButtons $animate $transX $restoreButtonsVisible $screenWidth")
 
-            val closeRes = if(isRtl) R.drawable.ic_keyboard_arrow_left_black_24dp else R.drawable.ic_keyboard_arrow_right_black_24dp
-            val openRes = if(!isRtl) R.drawable.ic_keyboard_arrow_left_black_24dp else R.drawable.ic_keyboard_arrow_right_black_24dp
+        binding.apply {
+            val transX =
+                (if (restoreButtonsVisible) 0 else
+                    restoreButtonsContainer.width -
+                        (hideRestoreButton.width + hideRestoreButtonExtension.width)).toFloat() - mainBibleActivity.rightOffset1
+
+            Log.d(TAG, "updateRestoreButtons $animate $transX")
 
             if (restoreButtonsVisible) {
                 restoreButtonsContainer.isScrollable = true
-                hideRestoreButton.setBackgroundResource(closeRes)
+                hideRestoreButton.setBackgroundResource(R.drawable.ic_keyboard_arrow_right_black_24dp)
             } else {
-                restoreButtonsContainer.fullScroll(if(isRtl) View.FOCUS_RIGHT else View.FOCUS_LEFT)
+                restoreButtonsContainer.scrollX = 0
                 restoreButtonsContainer.isScrollable = false
-                hideRestoreButton.setBackgroundResource(openRes)
+                hideRestoreButton.setBackgroundResource(R.drawable.ic_keyboard_arrow_left_black_24dp)
             }
             if (animate) {
                 Log.d(TAG, "animate started")

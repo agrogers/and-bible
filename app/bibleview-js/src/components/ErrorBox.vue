@@ -91,12 +91,7 @@ export default {
   position: fixed;
   padding: 0.5em;
   color: white;
-  [dir=ltr] & {
-    right: 0;
-  }
-  [dir=rtl] & {
-    left: 0;
-  }
+  right: 0;
   width:1em;
   height: 1em;
   animation-name: animatetop;

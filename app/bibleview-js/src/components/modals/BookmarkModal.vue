@@ -228,13 +228,7 @@ font-size: 85%;
   .night & {
     background: linear-gradient(90deg, rgba(0, 0, 0, 0), $night-modal-header-background-color);
   }
-  [dir=ltr] & {
-    right: 80px;
-  }
-  [dir=rtl] & {
-    left: 80px;
-  }
-  top: 0;
+  right: 80px; top: 0;
   width: 30px;
   height: 2em;
   display: flex;

@@ -76,11 +76,7 @@ class BibleGestureListener(private val mainBibleActivity: MainBibleActivity) : S
                 return false
             } else if (horizontal > scaledMinimumDistance && Math.abs(velocityX) > minScaledVelocity) {
                 // right to left swipe - sometimes velocity seems to have wrong sign so use raw positions to determine direction
-                var goNext = flingEv.x > e2.x
-                if(CommonUtils.isRtl)
-                    goNext = !goNext
-
-                if (goNext) {
+                if (flingEv.x > e2.x) {
                     mainBibleActivity.next()
                 } else {
                     // left to right swipe
