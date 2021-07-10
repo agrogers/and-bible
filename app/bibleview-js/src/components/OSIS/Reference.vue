@@ -96,7 +96,13 @@ a {
     color: #8b00ee;
   }
   &.last-clicked {
-    background-color: rgba(255, 230, 0, 0.4);
+//    background-color: rgba(255, 230, 0, 0.4);
+  // Show's a heavy underline
+  border-bottom-style: solid;
+//  border-bottom-style: dashed;
+  border-bottom-width: 5px;
+  border-color: rgba(255, 230, 0, 0.9);
+
   }
   .night & {
     &.clicked {

@@ -138,12 +138,12 @@ export default {
 //  background-color: rgba(255, 230, 0, 0.4);
 
   // Shows an outline around the verse
-  outline-color: rgba(255, 230, 0, 0.9);;
-  outline-width: 3px;
-  outline-style: solid;
-  padding: .2em .4em;
+//  outline-color: rgba(255, 230, 0, 0.9);;
+//  outline-width: 3px;
+//  outline-style: solid;
+//  padding: .2em .4em;
 
-//  // Show's a side border but forces verse to be on a single line
+  // Show's a side border but forces verse to be on a single line
 //  border-left-style: solid;
 //  border-left-width: 10px;
 //  border-left-color: rgb(255,230,0);
@@ -151,8 +151,20 @@ export default {
 //  padding-left: -6px;
 //  display: block;
 
-  .night & {
-    background-color: rgba(0, 230, 0, 0.6);
-  }
+//  // Show's a heavy underline
+//  border-bottom-style: solid;
+////  border-bottom-style: dashed;
+//  border-bottom-width: 5px;
+//  border-color: rgba(255, 230, 0, 0.6);
+//
+//  .night & {
+//    background-color: rgba(0, 230, 0, 0.6);
+//  }
+}
+.isHighlighted .verseNumber {
+  background-color: rgba(255, 230, 0, 0.9);
+    padding: 5px 1px 5px 1px;
+    border-radius: 5px;
+    color: black;
 }
 </style>
