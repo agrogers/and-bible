@@ -16,7 +16,7 @@
   -->
 
 <template>
-  <Modal v-if="showBookmark && bookmark" @close="closeBookmark" wide :edit="!infoShown ? true : false">
+  <Modal v-if="showBookmark && bookmark" @close="closeBookmark" wide :locate-top="locateTop" :edit="!infoShown">
     <template #title-div>
       <div class="bookmark-title" style="width: calc(100% - 80px);">
         <div class="overlay"/>
@@ -86,8 +86,6 @@
         {{ sprintf(strings.createdAt, formatTimestamp(bookmark.createdAt)) }}<br/>
       </div>
     </div>
-    <template #footer>
-    </template>
   </Modal>
 </template>
 
@@ -115,6 +113,7 @@ export default {
     const infoShown = ref(false);
     const bookmarkId = ref(null);
     const labelList = ref(null);
+    const locateTop = ref(false);
 
     const {bookmarkMap, bookmarkLabels} = inject("globalBookmarks");
 
@@ -131,11 +130,12 @@ export default {
     const bookmarkNotes = computed(() => bookmark.value.notes);
     let originalNotes = null;
 
-    setupEventBusListener(Events.BOOKMARK_CLICKED, async (bookmarkId_, {openLabels = false, openInfo = false, openNotes = false} = {}) => {
+    setupEventBusListener(Events.BOOKMARK_CLICKED, async (bookmarkId_, {locateTop: _locateTop = false, openLabels = false, openInfo = false, openNotes = false} = {}) => {
       bookmarkId.value = bookmarkId_;
       originalNotes = bookmarkNotes.value;
       infoShown.value = !openNotes && (openInfo || !bookmarkNotes.value);
       editDirectly.value = !infoShown.value && !bookmarkNotes.value;
+      locateTop.value = _locateTop;
       showBookmark.value = true;
       if(openLabels && !openNotes) {
         await nextTick();
@@ -178,7 +178,7 @@ export default {
     }
 
     return {
-      showBookmark, closeBookmark, areYouSure, infoShown, bookmarkNotes,  bookmark, labelColor,
+      locateTop, showBookmark, closeBookmark, areYouSure, infoShown, bookmarkNotes,  bookmark, labelColor,
       changeNote, labels, originalBookLink, strings, adjustedColor, editDirectly, toggleInfo, labelList, ...common
     };
   },

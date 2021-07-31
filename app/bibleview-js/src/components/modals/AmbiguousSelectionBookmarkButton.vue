@@ -17,14 +17,15 @@
 
 <template>
   <div class="ambiguous-button" :style="buttonStyle" @click.stop="openBookmark">
-    <div class="one-liner">
+    <div class="verse-range one-liner">
       {{ bookmark.verseRangeAbbreviated }} <q v-if="bookmark.text"><i>{{ bookmark.text}}</i></q>
     </div>
-    <div v-if="bookmark.hasNote" class="one-liner">
+    <div v-if="bookmark.hasNote" class="note one-liner small">
+      <FontAwesomeIcon icon="edit" size="xs"/>
       {{ htmlToString(bookmark.notes)}}
     </div>
 
-    <div style="overflow-x: auto">
+    <div style="overflow-x: auto" class="label-list">
       <LabelList in-bookmark single-line :bookmark-id="bookmark.id"/>
     </div>
 
@@ -46,14 +47,16 @@ import {Events, emit} from "@/eventbus";
 import {adjustedColor} from "@/utils";
 import Color from "color";
 import BookmarkButtons from "@/components/BookmarkButtons";
+import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
 
 export default {
   emits: ["selected"],
   name: "AmbiguousSelectionBookmarkButton",
   props: {
     bookmarkId: {required: true, type: Number},
+    locateTop: {default: false, type: Boolean},
   },
-  components: {LabelList, BookmarkButtons},
+  components: {LabelList, BookmarkButtons, FontAwesomeIcon},
   setup(props, {emit: $emit}) {
     const {bookmarkMap, bookmarkLabels} = inject("globalBookmarks");
     const common = useCommon();
@@ -78,12 +81,12 @@ export default {
 
     function editNotes() {
       $emit("selected");
-      emit(Events.BOOKMARK_CLICKED, bookmark.value.id, {openNotes: true});
+      emit(Events.BOOKMARK_CLICKED, bookmark.value.id, {openNotes: true, locateTop: props.locateTop});
     }
 
     function openBookmark() {
       $emit("selected");
-      emit(Events.BOOKMARK_CLICKED, bookmark.value.id);
+      emit(Events.BOOKMARK_CLICKED, bookmark.value.id, {locateTop: props.locateTop});
     }
 
     function htmlToString(html) {
@@ -108,5 +111,8 @@ export default {
   }
   @extend .button;
   text-align: start;
+}
+.small {
+    font-size: 0.9em
 }
 </style>

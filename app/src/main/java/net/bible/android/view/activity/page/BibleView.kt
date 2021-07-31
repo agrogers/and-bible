@@ -239,9 +239,9 @@ class BibleView(val mainBibleActivity: MainBibleActivity,
     class BibleViewTouched(val onlyTouch: Boolean = false)
 
     init {
-        if ((0 != BibleApplication.application.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) || CommonUtils.isBeta) {
+        //if ((0 != BibleApplication.application.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) || CommonUtils.isBeta) {
             setWebContentsDebuggingEnabled(true)
-        }
+        //}
         gestureDetector = GestureDetectorCompat(context, gestureListener)
         setOnTouchListener { v, event ->
             if (gestureDetector.onTouchEvent(event)) {
@@ -615,14 +615,16 @@ class BibleView(val mainBibleActivity: MainBibleActivity,
 
         val fontModuleNames = AndBibleAddons.fontModuleNames.joinToString(",")
         val featureModuleNames = AndBibleAddons.featureModuleNames.joinToString(",")
+        val styleModuleNames = AndBibleAddons.styleModuleNames.joinToString(",")
         loadUrl("https://appassets.androidplatform.net/assets/bibleview-js/index.html" +
-            "?lang=$lang&fontModuleNames=$fontModuleNames&featureModuleNames=$featureModuleNames&rtl=$isRtl&night=$nightMode")
+            "?lang=$lang&fontModuleNames=$fontModuleNames&styleModuleNames=$styleModuleNames&featureModuleNames=$featureModuleNames&rtl=$isRtl&night=$nightMode")
     }
 
      fun onEvent(e: ReloadAddonsEvent) {
         val fontModuleNames = json.encodeToString(serializer(), AndBibleAddons.fontModuleNames)
         val featureModuleNames = json.encodeToString(serializer(), AndBibleAddons.featureModuleNames)
-        executeJavascriptOnUiThread("bibleView.emit('reload_addons', {fontModuleNames: $fontModuleNames, featureModuleNames: $featureModuleNames});")
+        val styleModuleNames = json.encodeToString(serializer(), AndBibleAddons.styleModuleNames)
+        executeJavascriptOnUiThread("bibleView.emit('reload_addons', {fontModuleNames: $fontModuleNames, featureModuleNames: $featureModuleNames, styleModuleNames: $styleModuleNames});")
     }
 
     override fun destroy() {
