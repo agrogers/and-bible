@@ -16,7 +16,7 @@
   -->
 
 <template>
-  <Modal v-if="show" @close="show=false" blocking>
+  <Modal v-if="show" @close="show=false" blocking locate-top>
     <template #title>
       <slot/>
     </template>
@@ -54,6 +54,7 @@ export default {
       error.value = _error;
       show.value = true;
       promise = new Deferred();
+      await nextTick();
       await nextTick();
       inputElement.value.focus();
       const result = await promise.wait()

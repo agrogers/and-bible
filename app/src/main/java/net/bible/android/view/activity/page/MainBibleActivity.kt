@@ -207,11 +207,12 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
             throw RuntimeException("MainBibleActivity was created second time!")
         }
         _mainBibleActivity = this
-        CommonUtils.prepareData()
 
         ScreenSettings.refreshNightMode()
         currentNightMode = ScreenSettings.nightMode
         super.onCreate(savedInstanceState, true)
+
+        CommonUtils.prepareData()
 
         binding = MainBibleViewBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -300,6 +301,7 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
 
         setupToolbarButtons()
         setupToolbarFlingDetection()
+        setSoftKeyboardMode()
 
         refreshScreenKeepOn()
         if(!initialized)
@@ -592,7 +594,6 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
                 val prefOptions = dummyStrongsPrefOption
                 prefOptions.value = (prefOptions.value as Int + 1) % 3
                 prefOptions.handle()
-                invalidateOptionsMenu()
                 updateStrongsButton()
             }
 
@@ -619,7 +620,6 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
                 true
             }
             searchButton.setOnClickListener { startActivityForResult(searchControl.getSearchIntent(documentControl.currentDocument), STD_REQUEST_CODE) }
-            bookmarkButton.setOnClickListener { startActivityForResult(Intent(this@MainBibleActivity, Bookmarks::class.java), STD_REQUEST_CODE) }
         }
     }
 
@@ -685,7 +685,7 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
 
             ABEventBus.getDefault().post(ToastEvent(windowRepository.name))
 
-            invalidateOptionsMenu()
+            updateBottomBars()
             updateTitle()
         }
 
@@ -699,7 +699,7 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
             }, opensDialog = true)
             R.id.autoAssignLabels -> AutoAssignPreference(windowRepository.workspaceSettings)
             R.id.textOptionsSubMenu -> SubMenuPreference(false)
-            R.id.textOptionItem -> getPrefItem(settingsBundle, CommonUtils.lastDisplaySettings[order])
+            R.id.textOptionItem -> getPrefItem(settingsBundle, CommonUtils.lastDisplaySettingsSorted[order])
             R.id.splitMode -> SplitModePreference()
             R.id.autoPinMode -> WindowPinningPreference()
             R.id.tiltToScroll -> TiltToScrollPreference()
@@ -729,7 +729,7 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
 
         menuInflater.inflate(R.menu.main_bible_options_menu, menu)
 
-        val lastSettings = CommonUtils.lastDisplaySettings
+        val lastSettings = CommonUtils.lastDisplaySettingsSorted
         if(lastSettings.isNotEmpty()) {
             for ((idx, t) in lastSettings.withIndex()) {
                 val itm = getItemOptions(R.id.textOptionItem, idx)
@@ -764,6 +764,7 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
                 }
             }
         }
+        menu.findItem(R.id.allTextOptions).icon = CommonUtils.combineIcons(R.drawable.ic_text_options_24dp, R.drawable.ic_workspace_overlay_24dp)
         handleMenu(menu)
         menuHelper.show()
     }
@@ -779,14 +780,12 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
             if(itemOptions is Preference) {
                 windowRepository.updateWindowTextDisplaySettingsValues(setOf(itemOptions.type), windowRepository.textDisplaySettings)
             }
-            invalidateOptionsMenu()
         } else {
             val onReady = {
                 if(itemOptions is Preference) {
                     windowRepository.updateWindowTextDisplaySettingsValues(setOf(itemOptions.type), windowRepository.textDisplaySettings)
                 }
                 windowRepository.updateAllWindowsTextDisplaySettings()
-                invalidateOptionsMenu()
             }
             val onReset = {
                 if(itemOptions is Preference) {
@@ -806,7 +805,7 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
     private val pageTitleText: String
         get() {
             val doc = pageControl.currentPageManager.currentPage.currentDocument
-            var key = pageControl.currentPageManager.currentPage.key
+            var key = pageControl.currentPageManager.currentPage.displayKey
             val isBible = doc?.bookCategory == BookCategory.BIBLE
             if(isBible) {
                 key = pageControl.currentBibleVerse
@@ -957,27 +956,19 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
                 } else View.GONE
             }
 
-            fun addBookmarks() {
-                bookmarkButton.visibility = if (visibleButtonCount < maxButtons) {
-                    visibleButtonCount += 1
-                    View.VISIBLE
-                } else View.GONE
-            }
-
             val speakLastUsed = preferences.getLong("speak-last-used", 0)
             val searchLastUsed = preferences.getLong("search-last-used", 0)
-            val bookmarksLastUsed = preferences.getLong("bookmarks-last-used", 0)
 
-            val funs = arrayListOf(Pair(speakLastUsed, {addSpeak()}),
+            val funs = arrayListOf(
+                Pair(speakLastUsed, {addSpeak()}),
                 Pair(searchLastUsed, {addSearch()}),
-                Pair(bookmarksLastUsed, {addBookmarks()}))
+            )
             funs.sortBy { -it.first }
 
             for(p in funs) {
                 p.second()
             }
 
-            invalidateOptionsMenu()
             if(!showSpeak && transportBarVisible && speakControl.isStopped) {
                 transportBarVisible = false
                 updateBottomBars()
@@ -1280,7 +1271,7 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
     }
 
     fun updateDocuments() {
-        documentControl.checkIfAnyPageDocumentsDeleted()
+        windowControl.windowSync.reloadAllWindows(true)
         updateActions()
     }
 
@@ -1330,7 +1321,6 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
                         windowRepository.updateAllWindowsTextDisplaySettings()
                     }
                     resetSystemUi()
-                    invalidateOptionsMenu()
                 }
                 TEXT_DISPLAY_SETTINGS_CHANGED -> {
                     val edited = extras.getBoolean("edited")
@@ -1417,7 +1407,6 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
                 windowRepository.updateAllWindowsTextDisplaySettings()
             }
         }
-        invalidateOptionsMenu()
         resetSystemUi()
     }
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
@@ -1437,7 +1426,6 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
         resetSystemUi()
         if(!refreshIfNightModeChange()) {
             requestSdcardPermission()
-            invalidateOptionsMenu()
             documentViewManager.buildView()
             ABEventBus.getDefault().post(SynchronizeWindowsEvent(true))
         }
@@ -1457,7 +1445,15 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
     }
 
     fun onEvent(event: NumberOfWindowsChangedEvent) {
-        invalidateOptionsMenu()
+        setSoftKeyboardMode()
+    }
+
+    private fun setSoftKeyboardMode() {
+        if (windowControl.isMultiWindow) {
+            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN)
+        } else {
+            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        }
     }
 
     /**
@@ -1472,20 +1468,6 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
         isPaused = false
         // allow webView to start monitoring tilt by setting focus which causes tilt-scroll to resume
         documentViewManager.documentView.asView().requestFocus()
-    }
-
-    /**
-     * Some menu items must be hidden for certain document types
-     */
-    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
-        // construct the options menu
-        super.onPrepareOptionsMenu(menu)
-
-        // disable some options depending on document type
-        windowControl.activeWindowPageManager.currentPage.updateOptionsMenu(menu)
-
-        // must return true for menu to be displayed
-        return true
     }
 
     private var actionMode: ActionMode? = null

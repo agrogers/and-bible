@@ -133,6 +133,8 @@ export default {
 .editable-text {
   position: relative;
   line-height: 1.25em;
+  color: var(--text-color);
+  background-color: var(--background-color);
 }
 </style>
 <style lang="scss">
@@ -151,6 +153,9 @@ div.pell-content, .pell-content div, .notes-display div {
   }
 }
 .editable-text ul {
-  padding-left: 10pt!important;
+  padding-left: 12pt!important;
+}
+.editable-text .placeholder {
+  padding: 15px;
 }
 </style>

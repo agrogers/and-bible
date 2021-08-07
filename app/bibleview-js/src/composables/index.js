@@ -148,6 +148,9 @@ export function useConfig(documentType) {
         showFootNotes: true,
         fontFamily: "sans-serif",
         fontSize: 16,
+
+        disableBookmarking: false,
+
         showBookmarks: true,
         showMyNotes: true,
         bookmarksHideLabels: [],
@@ -258,8 +261,6 @@ export function useConfig(documentType) {
 
     setupEventBusListener(Events.SET_CONFIG, async function setConfig({config: newConfig, appSettings: newAppSettings, initial = false} = {}) {
         const defer = new Deferred();
-        const oldShowBookmarks = config.showBookmarks;
-        const oldMyNotes = config.showMyNotes;
         const isBible = documentType.value === DocumentTypes.BIBLE_DOCUMENT
         const needsRefreshLocation = !initial && (isBible || documentType.value === DocumentTypes.OSIS_DOCUMENT) && getNeedRefreshLocation(newConfig);
         const needBookmarkRefresh = getNeedBookmarkRefresh(newConfig);
@@ -267,8 +268,7 @@ export function useConfig(documentType) {
         if (needsRefreshLocation) emit(Events.CONFIG_CHANGED, defer)
 
         if(isBible && needBookmarkRefresh) {
-            config.showBookmarks = false
-            config.showMyNotes = false
+            config.disableBookmarking = true;
             await nextTick();
         }
         for (const i in newConfig) {
@@ -291,14 +291,8 @@ export function useConfig(documentType) {
 
         errorBox = appSettings.errorBox;
         if(isBible && needBookmarkRefresh) {
-            if (newConfig.showBookmarks === undefined) {
-                // eslint-disable-next-line require-atomic-updates
-                config.showBookmarks = oldShowBookmarks;
-            }
-            if (newConfig.showMyNotes === undefined) {
-                // eslint-disable-next-line require-atomic-updates
-                config.showMyNotes = oldMyNotes;
-            }
+            // eslint-disable-next-line require-atomic-updates
+            config.disableBookmarking = false
         }
 
         if (needsRefreshLocation) {
@@ -373,7 +367,13 @@ export function useFontAwesome() {
         iconName: 'custom-note-false',
         icon: [100, 90, [], null, "m69.9 65.4 5.6-5.5c0.9-0.9 2.5-0.4 2.5 1v25.2c0 4.7-3.7 8.4-8.4 8.4H8.3c-4.5 0-8.3-3.7-8.3-8.4V24.9c0-4.7 3.8-8.3 8.3-8.3H56c1.2 0 1.8 1.4 0.9 2.2l-5.6 5.7c-0.1 0.2-0.5 0.4-0.8 0.4H8.3V86.1H69.6V66.5c0-0.5 0.2-0.9 0.3-1.1zM97.3 30.3 51.5 76.1 35.8 77.8c-4.5 0.5-8.5-3.3-8-8L29.6 54.1 75.3 8.5c4-4 10.5-4 14.5 0l7.5 7.4c3.7 4 3.7 10.4 0 14.4zM80 35.7 69.9 25.6 37.6 58 36.4 69.3 47.7 68ZM91.3 21.8 83.9 14.4c-0.7-0.7-1.9-0.7-2.6 0l-5.4 5.3 10.1 10.1 5.3-5.4c0.7-0.7 0.7-1.9 0-2.6z"]
     };
+    const customStrongs = {
+        prefix: 'fas',
+        iconName: 'custom-morph',
+        icon: [100, 100, [], null, "M91 82.4H88.1V67.6c0-1.6-1.4-3-2.9-3H53v-7.4c2.5-1.3 8.8-4.5 14.6-4.5 7.8 0 15.8 5.3 16 5.3 0.8 0.8 1.9 0.8 2.9 0.2 1-0.4 1.6-1.4 1.6-2.5V8.9C88.1 7.9 87.5 7 86.7 6.4 86.3 6.2 77.2 0.1 67.6 0.1 60.4 0.1 53.2 3.7 50.1 5.4 46.9 3.7 39.7 0.1 32.5 0.1 23 0.1 13.7 6.2 13.3 6.4 12.5 7 12 7.9 12 8.9V55.7c0 1.1 0.6 2.1 1.5 2.5 1 0.6 2.1 0.6 3.1-0.2 0.1 0 8.1-5.3 15.9-5.3 5.9 0 12.1 3.2 14.6 4.5v7.4H14.9c-1.6 0-2.9 1.4-2.9 3V82.4H9.1c-1.6 0-2.9 1.4-2.9 2.9V97c0 1.6 1.3 2.9 2.9 2.9H20.8c1.6 0 2.9-1.3 2.9-2.9V85.3c0-1.5-1.3-2.9-2.9-2.9H17.9V70.5h29.2v11.9h-2.9c-1.5 0-2.9 1.4-2.9 2.9V97c0 1.6 1.4 2.9 2.9 2.9h11.7c1.6 0 2.9-1.3 2.9-2.9V85.3c0-1.5-1.3-2.9-2.9-2.9H53V70.5h29.2v11.9h-2.9c-1.6 0-2.9 1.4-2.9 2.9V97c0 1.6 1.3 2.9 2.9 2.9H91c1.6 0 2.9-1.3 2.9-2.9V85.3c0-1.5-1.3-2.9-2.9-2.9zM82.2 10.5v40.3c-3.7-2-9.1-3.9-14.6-3.9-5.4 0-10.9 1.9-14.6 3.9V10.5c2.5-1.5 8.8-4.5 14.6-4.5 5.9 0 12.1 3.1 14.6 4.6zM32.5 46.9c-5.4 0-10.9 1.9-14.6 3.9V10.5c2.5-1.5 8.8-4.5 14.6-4.5 5.9 0 12.1 3.1 14.6 4.6V50.8C43.4 48.8 38 46.9 32.5 46.9ZM17.9 94.1H12v-5.9h5.9zm35.1 0H47.1V88.2H53Zm35.1 0h-5.9v-5.9h5.9zM26.7 18.2c0.2 0 0.4 0 0.5-0.1 1.8-0.3 3.6-0.4 5.3-0.4 1.8 0 3.5 0.1 5.3 0.4 1.7 0.3 3.1-0.8 3.5-2.4 0.2-1.5-0.8-3.1-2.4-3.3-2.3-0.4-4.2-0.6-6.4-0.6-1.9 0-4.1 0.2-6.4 0.6-1.6 0.2-2.6 1.8-2.4 3.3 0.2 1.5 1.6 2.5 3 2.5zm35.1 0c0.2 0 0.4 0 0.5-0.1 1.8-0.3 3.6-0.4 5.3-0.4 1.8 0 3.5 0.1 5.3 0.4 1.7 0.3 3.1-0.8 3.5-2.4 0.2-1.5-0.8-3.1-2.4-3.3-2.3-0.4-4.2-0.6-6.4-0.6-1.9 0-4.1 0.2-6.4 0.6-1.6 0.2-2.6 1.8-2.4 3.3 0.2 1.5 1.6 2.5 3 2.5zm-22.9 5.9c-2.3-0.4-4.2-0.6-6.4-0.6-1.9 0-4.1 0.2-6.4 0.6-1.6 0.2-2.6 1.7-2.4 3.3 0.2 1.6 1.6 2.5 3 2.5 0.2 0 0.4 0 0.5-0.2 1.8-0.2 3.6-0.3 5.3-0.3 1.8 0 3.5 0.1 5.3 0.3 1.7 0.4 3.1-0.7 3.5-2.3 0.2-1.6-0.8-3.1-2.4-3.3zm22.9 5.8c0.2 0 0.4 0 0.5-0.2 1.8-0.2 3.6-0.3 5.3-0.3 1.8 0 3.5 0.1 5.3 0.3 1.7 0.4 3.1-0.7 3.5-2.3 0.2-1.6-0.8-3.1-2.4-3.3-2.3-0.4-4.2-0.6-6.4-0.6-1.9 0-4.1 0.2-6.4 0.6-1.6 0.2-2.6 1.7-2.4 3.3 0.2 1.6 1.6 2.5 3 2.5zM74 35.8c-2.3-0.4-4.2-0.6-6.4-0.6-1.9 0-4.1 0.2-6.4 0.6-1.6 0.2-2.6 1.7-2.4 3.3 0.2 1.6 1.6 2.5 3 2.5 0.2 0 0.4 0 0.5-0.2 1.8-0.2 3.6-0.3 5.3-0.3 1.8 0 3.5 0.1 5.3 0.3 1.7 0.4 3.1-0.7 3.5-2.3C76.6 37.5 75.6 36 74 35.8Zm-35.1 0c-2.3-0.4-4.4-0.6-6.4-0.6-2.1 0-4.1 0.2-6.4 0.6-1.6 0.2-2.6 1.7-2.4 3.3 0.4 1.6 1.8 2.7 3.5 2.3 1.8-0.2 3.6-0.3 5.3-0.3 1.8 0 3.5 0.1 5.3 0.3 0.2 0.2 0.4 0.2 0.6 0.2 1.3 0 2.7-0.9 2.9-2.5 0.2-1.6-0.8-3.1-2.4-3.3z"]
+    };
 
+    library.add(customStrongs)
     library.add(customCompress)
     library.add(customWholeVerseFalse)
     library.add(customWholeVerseTrue)
@@ -470,18 +470,27 @@ export function useReferenceCollector() {
 
 export function useVerseHighlight() {
     const highlightedVerses = reactive(new Set());
+    const undoCustomHighlights = reactive([]);
 
-    const hasHighlights = computed(() => highlightedVerses.size > 0);
+    const hasHighlights = computed(() => highlightedVerses.size > 0 || undoCustomHighlights.length > 0);
 
-    function resetHighlights() {
+    function resetHighlights(onlyVerses = false) {
         highlightedVerses.clear();
+        if(!onlyVerses) {
+            undoCustomHighlights.forEach(f => f())
+            undoCustomHighlights.splice(0);
+        }
     }
 
     function highlightVerse(ordinal) {
         highlightedVerses.add(ordinal);
     }
 
-    return {highlightVerse, highlightedVerses, resetHighlights, hasHighlights}
+    function addCustom(f) {
+        undoCustomHighlights.push(f);
+    }
+
+    return {highlightVerse, addCustom, highlightedVerses, resetHighlights, hasHighlights}
 }
 
 
@@ -573,6 +582,7 @@ export function useCustomCss() {
     const count = new Map();
     const customCssPromises = [];
     function addCss(bookInitials) {
+        console.log(`Adding style for ${bookInitials}`);
         const c = count.get(bookInitials) || 0;
         if (!c) {
             const link = document.createElement("link");
@@ -595,10 +605,11 @@ export function useCustomCss() {
     }
 
     function removeCss(bookInitials) {
-        const c = count.get(bookInitials);
+        console.log(`Removing style for ${bookInitials}`)
+        const c = count.get(bookInitials) || 0;
         if(c > 1) {
             count.set(bookInitials, c-1);
-        } else {
+        } else if(c === 1){
             count.delete(bookInitials);
             cssNodes.get(bookInitials).remove();
             cssNodes.delete(bookInitials);
@@ -611,6 +622,29 @@ export function useCustomCss() {
             removeCss(bookInitials);
         });
     }
+
+    const customStyles = reactive([]);
+
+    function reloadStyles(styleModuleNames) {
+        customStyles.forEach(moduleName => {
+            removeCss(moduleName);
+        });
+        customStyles.splice(0);
+
+        styleModuleNames.forEach(moduleName => {
+            customStyles.push(moduleName);
+            addCss(moduleName);
+        });
+    }
+
+    const styleModuleNames = new URLSearchParams(window.location.search).get("styleModuleNames");
+    if (styleModuleNames) {
+        reloadStyles(styleModuleNames.split(","))
+    }
+
+    setupEventBusListener(Events.RELOAD_ADDONS, ({styleModuleNames}) => {
+        reloadStyles(styleModuleNames)
+    })
 
     return {registerBook, customCssPromises}
 }
@@ -665,6 +699,8 @@ export function useModal(android) {
         for(const {close} of modalOptArray.filter(o => !o.blocking))
             close();
     }
+
+    setupEventBusListener(Events.CLOSE_MODALS, closeModals)
 
     watch(modalOpen, v => android.reportModalState(v), {flush: "sync"})
 

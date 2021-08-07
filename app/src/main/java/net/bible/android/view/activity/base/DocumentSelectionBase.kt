@@ -22,6 +22,7 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
+import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.InputMethodManager
@@ -31,6 +32,7 @@ import android.widget.AdapterView.OnItemSelectedListener
 import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.Toast
+import androidx.appcompat.view.ActionMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -41,6 +43,8 @@ import kotlinx.serialization.Serializable
 import net.bible.android.activity.R
 import net.bible.android.activity.databinding.DocumentSelectionBinding
 import net.bible.android.control.document.DocumentControl
+import net.bible.android.control.download.DocumentStatus
+import net.bible.android.control.download.DownloadControl
 import net.bible.android.control.event.ABEventBus
 import net.bible.android.control.event.ToastEvent
 import net.bible.android.database.DocumentSearch
@@ -48,15 +52,17 @@ import net.bible.android.view.activity.base.Dialogs.Companion.instance
 import net.bible.android.view.activity.base.ListActionModeHelper.ActionModeActivity
 import net.bible.android.view.activity.download.isRecommended
 import net.bible.service.common.CommonUtils
+import net.bible.service.common.Ref
 import net.bible.service.db.DatabaseContainer
 import net.bible.service.download.DownloadManager
+import net.bible.service.download.isPseudoBook
 import net.bible.service.sword.AndBibleAddonFilter
 import org.crosswire.common.util.Language
 import org.crosswire.jsword.book.Book
 import org.crosswire.jsword.book.BookCategory
 import org.crosswire.jsword.book.BookException
 import org.crosswire.jsword.book.BookFilter
-import org.crosswire.jsword.book.BookFilters
+import org.crosswire.jsword.book.Books
 import org.crosswire.jsword.book.sword.SwordBookMetaData
 import java.util.*
 import javax.inject.Inject
@@ -93,6 +99,7 @@ data class RecommendedDocuments(
 }
 
 abstract class DocumentSelectionBase(optionsMenuId: Int, private val actionModeMenuId: Int) : ListActivityBase(optionsMenuId), ActionModeActivity {
+    @Inject lateinit var downloadControl: DownloadControl
 
     protected lateinit var binding: DocumentSelectionBinding
 
@@ -107,7 +114,7 @@ abstract class DocumentSelectionBase(optionsMenuId: Int, private val actionModeM
     private var isPopulated = false
     private val dao get() = DatabaseContainer.db.documentDao()
 
-    open val recommendedDocuments: RecommendedDocuments? = null
+    val recommendedDocuments = Ref<RecommendedDocuments>()
 
     private var allDocuments = ArrayList<Book>()
     var displayedDocuments = ArrayList<Book>()
@@ -226,6 +233,10 @@ abstract class DocumentSelectionBase(optionsMenuId: Int, private val actionModeM
 
             languageSpinner.setAdapter(langArrayAdapter)
             list.requestFocus()
+
+            intent.getStringExtra("search")?.run {
+                freeTextSearch.setText(this)
+            }
         }
         Log.d(TAG, "Initialize finished")
     }
@@ -341,11 +352,13 @@ abstract class DocumentSelectionBase(optionsMenuId: Int, private val actionModeM
                     allDocuments.clear()
                     allDocuments.addAll(newDocs)
                 }
-                dao.clear()
-                dao.insertDocuments(allDocuments.map {
-                    DocumentSearch(it.osisID, it.abbreviation, it.name, it.language.name, it.getProperty(DownloadManager.REPOSITORY_KEY)
-                        ?: "")
-                })
+                if(refresh) {
+                    dao.clear()
+                    dao.insertDocuments(allDocuments.map {
+                        DocumentSearch(it.osisID, it.abbreviation, if (it.isPseudoBook) "" else it.name, it.language.name, it.getProperty(DownloadManager.REPOSITORY_KEY)
+                            ?: "")
+                    })
+                }
 
                 Log.i(TAG, "Number of documents:" + allDocuments.size)
             } catch (e: Exception) {
@@ -391,8 +404,9 @@ abstract class DocumentSelectionBase(optionsMenuId: Int, private val actionModeM
 
                         displayedDocuments.sortWith(
                             compareBy(
+                                { downloadControl.getDocumentStatus(it).documentInstallStatus != DocumentStatus.DocumentInstallStatus.BEING_INSTALLED },
                                 { swordDocumentFacade.getDocumentByInitials(it.initials) == null },
-                                { if (lang != null) !it.isRecommended(recommendedDocuments) else false },
+                                { if (lang != null) !it.isRecommended(recommendedDocuments.value) else false },
                                 {
                                     when (it.bookCategory) {
                                         BookCategory.BIBLE -> 0
@@ -490,7 +504,7 @@ abstract class DocumentSelectionBase(optionsMenuId: Int, private val actionModeM
 
     private fun handleDelete(documents: List<Book>) {
         for (document in documents) {
-            if (documentControl.canDelete(document)) {
+            if (documentControl.canDelete(document.installedDocument)) {
                 val msg: CharSequence = getString(R.string.delete_doc, document.name)
                 AlertDialog.Builder(this)
                     .setMessage(msg).setCancelable(true)
@@ -498,7 +512,7 @@ abstract class DocumentSelectionBase(optionsMenuId: Int, private val actionModeM
                     ) { dialog, buttonId ->
                         try {
                             Log.d(TAG, "Deleting:$document")
-                            documentControl.deleteDocument(document)
+                            documentControl.deleteDocument(document.installedDocument)
 
                             // the doc list should now change
                             reloadDocuments()
@@ -525,7 +539,7 @@ abstract class DocumentSelectionBase(optionsMenuId: Int, private val actionModeM
                 ) { dialog, buttonId ->
                     try {
                         Log.d(TAG, "Deleting index:$document")
-                        swordDocumentFacade.deleteDocumentIndex(document)
+                        swordDocumentFacade.deleteDocumentIndex(document.installedDocument)
                     } catch (e: Exception) {
                         Log.e(TAG, "Deleting index crashed", e)
                         instance.showErrorMsg(R.string.error_occurred, e)
@@ -581,3 +595,5 @@ abstract class DocumentSelectionBase(optionsMenuId: Int, private val actionModeM
     }
 
 }
+
+val Book.installedDocument get() = Books.installed().getBook(initials)

@@ -17,10 +17,10 @@
  */
 package net.bible.android.control.page
 
-import android.content.Context
 import android.content.Intent
 import android.util.Log
 import net.bible.android.common.toV11n
+import net.bible.android.control.page.window.Window
 import net.bible.android.control.versification.BibleTraverser
 import net.bible.android.database.WorkspaceEntities
 import net.bible.android.view.activity.base.ActivityBase
@@ -28,7 +28,6 @@ import net.bible.android.view.activity.base.ActivityBase.Companion.STD_REQUEST_C
 import net.bible.android.view.activity.navigation.GridChoosePassageBook
 import net.bible.service.common.CommonUtils.getWholeChapter
 import net.bible.service.download.FakeBookFactory
-import net.bible.service.sword.SwordContentFacade
 import net.bible.service.sword.SwordDocumentFacade
 import org.crosswire.jsword.book.sword.SwordBook
 import org.crosswire.jsword.passage.Key
@@ -71,6 +70,7 @@ class CurrentBiblePage(
     }
 
     override fun getPageContent(key: Key): Document {
+        annotateKey = null
         val verseRange = key as VerseRange
         val doc = super.getPageContent(verseRange)
         return if(doc is OsisDocument) {
@@ -184,24 +184,24 @@ class CurrentBiblePage(
         currentBibleVerse.restoreFrom(entity.verse)
     }
 
-    var currentChapterVerse: ChapterVerse
+    @Deprecated("Used by test only!!! use setCurrentVerseOrdinal instead")
+    var currentChapterVerse
         get() = currentBibleVerse.chapterVerse
         set(chapterVerse) {
             val oldChapterVerse = currentBibleVerse.chapterVerse
             if(chapterVerse != oldChapterVerse) {
                 currentBibleVerse.chapterVerse = chapterVerse
-                onVerseChange()
+                //onVerseChange()
             }
-        }
-
+    }
     val currentVerseOrdinal: Int get() = currentBibleVerse.verse.ordinal
 
-    fun setCurrentVerseOrdinal(value: Int, versification: Versification?) {
+    fun setCurrentVerseOrdinal(value: Int, versification: Versification?, window: Window) {
         val old = currentBibleVerse.verse.ordinal
         val newVerse = Verse(versification?: currentBibleVerse.versificationOfLastSelectedVerse, value).toV11n(currentBibleVerse.versificationOfLastSelectedVerse)
         if(newVerse.ordinal != old) {
             currentBibleVerse.verse = newVerse
-            onVerseChange()
+            onVerseChange(window)
         }
     }
 

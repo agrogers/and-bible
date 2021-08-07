@@ -37,6 +37,7 @@ import net.bible.android.control.page.OsisDocument
 import net.bible.android.control.page.StudyPadDocument
 import net.bible.android.database.bookmarks.BookmarkEntities
 import net.bible.android.database.bookmarks.KJVA
+import net.bible.android.view.activity.base.IntentHelper
 import net.bible.android.view.activity.download.DownloadActivity
 import net.bible.android.view.activity.navigation.GridChoosePassageBook
 import net.bible.android.view.activity.page.MainBibleActivity.Companion.mainBibleActivity
@@ -66,7 +67,7 @@ class BibleJavascriptInterface(
                     is BibleDocument -> bibleView.initialVerse?.versification
                     is MyNotesDocument -> KJVA
                     else -> throw RuntimeException("Unsupported doc")
-                })
+                }, bibleView.window)
         } else if(doc is OsisDocument || doc is StudyPadDocument) {
             currentPageManager.currentPage.anchorOrdinal = ordinal
         }
@@ -146,7 +147,7 @@ class BibleJavascriptInterface(
         if (!downloadControl.checkDownloadOkay()) return
         val intent = Intent(mainBibleActivity, DownloadActivity::class.java)
         intent.putExtra("addons", true)
-        mainBibleActivity.startActivity(intent)
+        mainBibleActivity.startActivityForResult(intent, IntentHelper.UPDATE_SUGGESTED_DOCUMENTS_ON_FINISH)
     }
 
     @JavascriptInterface
@@ -166,7 +167,7 @@ class BibleJavascriptInterface(
     }
 
     @JavascriptInterface
-    fun deleteJournalEntry(journalId: Long) = bookmarkControl.deleteJournalEntry(journalId)
+    fun deleteJournalEntry(journalId: Long) = bookmarkControl.deleteStudyPadTextEntry(journalId)
 
     @JavascriptInterface
     fun removeBookmarkLabel(bookmarkId: Long, labelId: Long) = bookmarkControl.removeBookmarkLabel(bookmarkId, labelId)
@@ -244,9 +245,9 @@ class BibleJavascriptInterface(
     }
 
     @JavascriptInterface
-    fun openMyNotes(bookInitials: String?, ordinal: Int) {
+    fun openMyNotes(v11n: String, ordinal: Int) {
         GlobalScope.launch(Dispatchers.Main) {
-            bibleView.linkControl.openMyNotes(bookInitials, ordinal)
+            bibleView.linkControl.openMyNotes(v11n, ordinal)
         }
     }
 

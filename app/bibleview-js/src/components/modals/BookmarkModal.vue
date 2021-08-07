@@ -16,7 +16,7 @@
   -->
 
 <template>
-  <Modal v-if="showBookmark && bookmark" @close="closeBookmark" wide :edit="!infoShown ? true : false">
+  <Modal v-if="showBookmark && bookmark" @close="closeBookmark" wide :locate-top="locateTop" :edit="!infoShown">
     <template #title-div>
       <div class="bookmark-title" style="width: calc(100% - 80px);">
         <div class="overlay"/>
@@ -29,7 +29,7 @@
       </div>
     </template>
 
-    <template #buttons>
+    <template #extra-buttons>
       <div class="modal-action-button" @click="toggleInfo" @touchstart="toggleInfo">
         <template v-if="infoShown">
           <FontAwesomeIcon icon="edit"/>
@@ -37,9 +37,6 @@
         <template v-else>
           <FontAwesomeIcon icon="info-circle"/>
         </template>
-      </div>
-      <div class="modal-action-button right" @touchstart.stop @click.stop="closeBookmark">
-        <FontAwesomeIcon icon="times"/>
       </div>
     </template>
 
@@ -65,7 +62,7 @@
       <div class="links">
         <div class="link-line">
           <span class="link-icon"><FontAwesomeIcon icon="file-alt"/></span>
-          <a :href="`my-notes://?ordinal=${bookmark.originalOrdinalRange[0]}&bookInitials=${bookmark.bookInitials}`">{{ strings.openMyNotes }}</a>
+          <a :href="`my-notes://?ordinal=${bookmark.originalOrdinalRange[0]}&v11n=${bookmark.v11n}`">{{ strings.openMyNotes }}</a>
         </div>
         <div v-for="label in labels.filter(l => l.isRealLabel)" :key="`label-${bookmark.id}-${label.id}`" class="link-line">
           <span class="link-icon" :style="`color: ${adjustedColor(label.color).string()};`"><FontAwesomeIcon icon="file-alt"/></span>
@@ -86,8 +83,6 @@
         {{ sprintf(strings.createdAt, formatTimestamp(bookmark.createdAt)) }}<br/>
       </div>
     </div>
-    <template #footer>
-    </template>
   </Modal>
 </template>
 
@@ -115,6 +110,7 @@ export default {
     const infoShown = ref(false);
     const bookmarkId = ref(null);
     const labelList = ref(null);
+    const locateTop = ref(false);
 
     const {bookmarkMap, bookmarkLabels} = inject("globalBookmarks");
 
@@ -131,11 +127,12 @@ export default {
     const bookmarkNotes = computed(() => bookmark.value.notes);
     let originalNotes = null;
 
-    setupEventBusListener(Events.BOOKMARK_CLICKED, async (bookmarkId_, {openLabels = false, openInfo = false, openNotes = false} = {}) => {
+    setupEventBusListener(Events.BOOKMARK_CLICKED, async (bookmarkId_, {locateTop: _locateTop = false, openLabels = false, openInfo = false, openNotes = false} = {}) => {
       bookmarkId.value = bookmarkId_;
       originalNotes = bookmarkNotes.value;
       infoShown.value = !openNotes && (openInfo || !bookmarkNotes.value);
       editDirectly.value = !infoShown.value && !bookmarkNotes.value;
+      locateTop.value = _locateTop;
       showBookmark.value = true;
       if(openLabels && !openNotes) {
         await nextTick();
@@ -178,7 +175,7 @@ export default {
     }
 
     return {
-      showBookmark, closeBookmark, areYouSure, infoShown, bookmarkNotes,  bookmark, labelColor,
+      locateTop, showBookmark, closeBookmark, areYouSure, infoShown, bookmarkNotes,  bookmark, labelColor,
       changeNote, labels, originalBookLink, strings, adjustedColor, editDirectly, toggleInfo, labelList, ...common
     };
   },

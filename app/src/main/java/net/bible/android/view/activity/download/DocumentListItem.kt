@@ -32,6 +32,7 @@ import net.bible.android.control.event.documentdownload.DocumentDownloadEvent
 import net.bible.android.view.activity.base.RecommendedDocuments
 import net.bible.service.common.CommonUtils
 import net.bible.service.download.DownloadManager
+import net.bible.service.download.isPseudoBook
 import org.crosswire.jsword.book.Book
 import org.crosswire.jsword.book.BookCategory
 import org.crosswire.jsword.book.sword.SwordBookMetaData
@@ -108,30 +109,34 @@ class DocumentListItem(context: Context, attrs: AttributeSet?) : LinearLayout(co
         }
     }
 
-    fun updateControlState(documentStatus: DocumentStatus) = binding.apply {
+    fun updateControlState(documentStatus: DocumentStatus): Nothing? = binding.run {
+        undoButton.visibility = View.INVISIBLE
+        progressBar.visibility = View.INVISIBLE
         when (documentStatus.documentInstallStatus) {
             DocumentInstallStatus.INSTALLED -> {
                 downloadStatusIcon.setImageResource(R.drawable.ic_check_green_24dp)
-                progressBar.visibility = View.INVISIBLE
             }
             DocumentInstallStatus.NOT_INSTALLED -> {
                 downloadStatusIcon.setImageDrawable(null)
-                progressBar.visibility = View.INVISIBLE
             }
             DocumentInstallStatus.BEING_INSTALLED -> {
                 downloadStatusIcon.setImageResource(R.drawable.ic_arrow_downward_green_24dp)
                 setProgressPercent(documentStatus.percentDone)
                 progressBar.visibility = View.VISIBLE
+                undoButton.visibility = View.VISIBLE
             }
             DocumentInstallStatus.UPGRADE_AVAILABLE -> {
                 downloadStatusIcon.setImageResource(R.drawable.ic_arrow_upward_amber_24dp)
-                progressBar.visibility = View.INVISIBLE
             }
             DocumentInstallStatus.ERROR_DOWNLOADING -> {
                 downloadStatusIcon.setImageResource(R.drawable.ic_warning_red_24dp)
-                progressBar.visibility = View.INVISIBLE
+            }
+            DocumentInstallStatus.INSTALL_CANCELLED -> {
+                val newStatus = DocumentStatus(documentStatus.id, if(document.isInstalled) DocumentInstallStatus.INSTALLED else DocumentInstallStatus.NOT_INSTALLED, 0)
+                updateControlState(newStatus)
             }
         }
+        null
     }
 
     /**

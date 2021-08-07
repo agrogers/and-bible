@@ -54,7 +54,7 @@ class BookmarkAddedOrUpdatedEvent(val bookmark: Bookmark): BookmarkEvent()
 class BookmarkToLabelAddedOrUpdatedEvent(val bookmarkToLabel: BookmarkToLabel)
 class BookmarksDeletedEvent(val bookmarkIds: List<Long>): BookmarkEvent()
 class LabelAddedOrUpdatedEvent(val label: Label): BookmarkEvent()
-class BookmarkNoteModifiedEvent(val bookmarkId: Long, val notes: String?): BookmarkEvent()
+class BookmarkNoteModifiedEvent(val bookmarkId: Long, val notes: String?, val lastUpdatedOn: Long): BookmarkEvent()
 
 class StudyPadOrderEvent(
     val labelId: Long,
@@ -140,13 +140,15 @@ open class BookmarkControl @Inject constructor(
 
     fun deleteBookmark(bookmark: Bookmark) {
         dao.delete(bookmark)
-        sanitizeJournalOrder(bookmark)
+        sanitizeStudyPadOrder(bookmark)
         ABEventBus.getDefault().post(BookmarksDeletedEvent(listOf(bookmark.id)))
     }
 
     fun deleteBookmarks(bookmarks: List<Bookmark>) {
         dao.deleteBookmarks(bookmarks)
-        bookmarks.forEach { sanitizeJournalOrder(it) }
+        for (it in bookmarks) {
+            sanitizeStudyPadOrder(it)
+        }
         ABEventBus.getDefault().post(BookmarksDeletedEvent(bookmarks.map { it.id }))
     }
 
@@ -228,6 +230,7 @@ open class BookmarkControl @Inject constructor(
 
     fun reset() {
         _speakLabel = null
+        _unlabeledLabel = null
     }
 
     fun isSpeakBookmark(bookmark: Bookmark): Boolean = labelsForBookmark(bookmark).contains(speakLabel)
@@ -243,7 +246,7 @@ open class BookmarkControl @Inject constructor(
         val bookmark = dao.bookmarkById(bookmarkId)!!
         addLabels(bookmark)
         addText(bookmark)
-        ABEventBus.getDefault().post(BookmarkNoteModifiedEvent(bookmark.id, bookmark.notes))
+        ABEventBus.getDefault().post(BookmarkNoteModifiedEvent(bookmark.id, bookmark.notes, bookmark.lastUpdatedOn.time))
     }
 
     fun deleteLabels(toList: List<Long>) {
@@ -331,14 +334,14 @@ open class BookmarkControl @Inject constructor(
     fun getJournalById(journalTextEntryId: Long): StudyPadTextEntry? = dao.journalTextEntryById(journalTextEntryId)
 
     fun updateJournalTextEntries(studyPadTextEntries: List<StudyPadTextEntry>) = dao.updateJournalTextEntries(studyPadTextEntries)
-    fun deleteJournalEntry(journalId: Long) {
-        val entry = dao.journalTextEntryById(journalId)!!
+    fun deleteStudyPadTextEntry(textEntryId: Long) {
+        val entry = dao.journalTextEntryById(textEntryId)!!
         dao.delete(entry)
-        ABEventBus.getDefault().post(StudyPadTextEntryDeleted(journalId))
-        sanitizeJournalOrder(dao.labelById(entry.labelId)!!)
+        ABEventBus.getDefault().post(StudyPadTextEntryDeleted(textEntryId))
+        sanitizeStudyPadOrder(dao.labelById(entry.labelId)!!)
     }
 
-    private fun sanitizeJournalOrder(label: Label) {
+    private fun sanitizeStudyPadOrder(label: Label) {
         val bookmarkToLabels = dao.getBookmarkToLabelsForLabel(label.id)
         val journals = dao.journalTextEntriesByLabelId(label.id)
         val all = ArrayList<Any>()
@@ -351,11 +354,10 @@ open class BookmarkControl @Inject constructor(
                 else -> 0
             }
         }
-        var count = 0
         val changedBookmarkToLabels = mutableListOf<BookmarkToLabel>()
         val changedJournalTextEntries = mutableListOf<StudyPadTextEntry>()
 
-        for (it in all) {
+        for ((count, it) in all.withIndex()) {
             when (it) {
                 is BookmarkToLabel -> {
                     if(it.orderNumber != count) {
@@ -370,7 +372,6 @@ open class BookmarkControl @Inject constructor(
                     }
                 }
             }
-            count ++
         }
         dao.updateBookmarkToLabels(changedBookmarkToLabels)
         dao.updateJournalTextEntries(changedJournalTextEntries)
@@ -382,7 +383,11 @@ open class BookmarkControl @Inject constructor(
             )
     }
 
-    private fun sanitizeJournalOrder(bookmark: Bookmark) = labelsForBookmark(bookmark).forEach { sanitizeJournalOrder(it) }
+    private fun sanitizeStudyPadOrder(bookmark: Bookmark) {
+        for (it in labelsForBookmark(bookmark)) {
+            sanitizeStudyPadOrder(it)
+        }
+    }
 
     fun createJournalEntry(labelId: Long, entryOrderNumber: Int) {
         val entry = StudyPadTextEntry(labelId = labelId, orderNumber = entryOrderNumber + 1)

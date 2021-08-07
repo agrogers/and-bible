@@ -64,6 +64,7 @@ import net.bible.android.view.activity.page.BibleViewFactory
 import net.bible.android.view.activity.page.BibleViewInputFocusChanged
 import net.bible.android.view.activity.page.CommandPreference
 import net.bible.android.view.activity.page.MainBibleActivity
+import net.bible.android.view.activity.page.MainBibleActivity.Companion._mainBibleActivity
 import net.bible.android.view.activity.page.MainBibleActivity.Companion.mainBibleActivity
 import net.bible.android.view.activity.page.OptionsMenuItemInterface
 import net.bible.android.view.activity.page.Preference
@@ -491,6 +492,7 @@ class SplitBibleArea: FrameLayout(mainBibleActivity) {
             return
         }
         Log.d(TAG, "toggleWindowButtonVisibility")
+        val mainBibleActivity = _mainBibleActivity ?: return
         mainBibleActivity.runOnUiThread {
             var atLeastOneButtonWillAnimate = false
             for ((idx, b) in windowButtons.withIndex()) {
@@ -700,7 +702,7 @@ class SplitBibleArea: FrameLayout(mainBibleActivity) {
 
             val windowList2 = windowRepository.visibleWindows
             count = 0
-            windowList2.forEach {
+            for (it in windowList2) {
                 if (it.id != window.id) {
                     val p = it.pageManager.currentPage
                     val copySettingsTitle = BibleApplication.application.getString(R.string.copy_settings_to_window, count + 1, p.currentDocument?.abbreviation, p.key?.name)
@@ -712,7 +714,7 @@ class SplitBibleArea: FrameLayout(mainBibleActivity) {
             BookName.setFullBookName(oldValue)
         }
 
-        val lastSettings = CommonUtils.lastDisplaySettings
+        val lastSettings = CommonUtils.lastDisplaySettingsSorted
         if(lastSettings.isNotEmpty()) {
             for ((idx, t) in lastSettings.withIndex()) {
                 val itm = getItemOptions(window, R.id.textOptionItem, idx)
@@ -835,7 +837,7 @@ class SplitBibleArea: FrameLayout(mainBibleActivity) {
             },
                 visible = !window.isLinksWindow
             )
-            R.id.textOptionItem -> getPrefItem(settingsBundle, CommonUtils.lastDisplaySettings[order])
+            R.id.textOptionItem -> getPrefItem(settingsBundle, CommonUtils.lastDisplaySettingsSorted[order])
             R.id.copySettingsTo -> SubMenuPreference()
             R.id.copySettingsToWorkspace -> CommandPreference({_, _, _ ->
                 windowControl.copySettingsToWorkspace(window)

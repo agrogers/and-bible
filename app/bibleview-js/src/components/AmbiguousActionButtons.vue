@@ -35,10 +35,10 @@
       <FontAwesomeIcon icon="file-alt"/>
       <div class="title">{{ strings.verseMyNotes }}</div>
     </div>
-    <div class="large-action" @click="speak">
+    <!-- div class="large-action" @click="speak">
       <FontAwesomeIcon icon="headphones"/>
       <div class="title">{{ vertical? strings.verseSpeakLong: strings.verseSpeak }}</div>
-    </div>
+    </div -->
     <div class="large-action" @click="share">
       <FontAwesomeIcon icon="share-alt"/>
       <div class="title">{{ vertical? strings.verseShareLong: strings.verseShare }}</div>
@@ -75,6 +75,7 @@ export default {
     const selectionInfo = computed(() => props.selectionInfo);
     const android = inject("android");
 
+    const v11n = computed(() => selectionInfo.value && selectionInfo.value.v11n);
     const bookInitials = computed(() => selectionInfo.value && selectionInfo.value.bookInitials);
     const startOrdinal = computed(() => selectionInfo.value && selectionInfo.value.startOrdinal);
     const endOrdinal = computed(() => selectionInfo.value && selectionInfo.value.endOrdinal);
@@ -85,7 +86,6 @@ export default {
 
     function addBookmark() {
       android.addBookmark(bookInitials.value, startOrdinal.value, endOrdinal.value, false);
-      android.toast(strings.verseTip);
       emit("close");
     }
 
@@ -95,12 +95,11 @@ export default {
 
     function addNote() {
       android.addBookmark(bookInitials.value, startOrdinal.value, endOrdinal.value, true);
-      android.toast(strings.verseTip);
       emit("close");
     }
 
     function openMyNotes() {
-      android.openMyNotes(bookInitials.value, startOrdinal.value);
+      android.openMyNotes(v11n.value, startOrdinal.value);
     }
 
     function speak() {

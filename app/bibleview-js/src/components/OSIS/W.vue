@@ -38,8 +38,7 @@
 import {checkUnsupportedProps, strongsModes, useCommon} from "@/composables";
 import {addEventFunction, EventPriorities} from "@/utils";
 import {computed, ref} from "@vue/reactivity";
-import {eventBus, Events} from "@/eventbus";
-let cancelFunc = () => {};
+import {inject} from "@vue/runtime-core";
 
 export default {
   name: "W",
@@ -58,11 +57,14 @@ export default {
     checkUnsupportedProps(props, "subType")
     const {strings, config, ...common} = useCommon();
     const isHighlighted = ref(false);
+    const {addCustom, resetHighlights} = inject("verseHighlight");
     function prep(string) {
       let remainingString = string;
       const res = []
       do {
-        const s = remainingString.match(/([^ :]+:)([^:]+)$/)[0]
+        const match = remainingString.match(/([^ :]+:)([^:]+)$/)
+        if(!match) return res;
+        const s = match[0]
         res.push(s);
         remainingString = remainingString.slice(0, remainingString.length - s.length)
       } while(remainingString.trim().length > 0)
@@ -89,15 +91,10 @@ export default {
       const priority = showStrongsSeparately.value ? EventPriorities.STRONGS_LINK: EventPriorities.STRONGS_DOTTED;
       addEventFunction(event, () => {
         window.location.assign(url)
-        cancelFunc();
+        resetHighlights();
         isHighlighted.value = true;
-        cancelFunc = () => {
-          isHighlighted.value = false;
-          eventBus.off(Events.WINDOW_CLICKED, cancelFunc);
-          cancelFunc = () => {};
-        }
-        eventBus.on(Events.WINDOW_CLICKED, cancelFunc);
-      }, {priority, title: strings.strongsAndMorph, dottedStrongs: !showStrongsSeparately.value});
+        addCustom(() => isHighlighted.value = false);
+      }, {priority, icon: "custom-morph", title: strings.strongsAndMorph, dottedStrongs: !showStrongsSeparately.value});
     }
     const showStrongs = computed(() => config.strongsMode !== strongsModes.off);
     const showStrongsSeparately = computed(() => config.strongsMode === strongsModes.links);
@@ -111,6 +108,10 @@ export default {
 @import "~@/common.scss";
   .link-style {
     text-decoration: underline dotted;
+    [lang=he],[lang=hbo] & {
+      text-decoration-style: solid;
+      text-decoration-color: hsla(var(--text-color-h), var(--text-color-s), var(--text-color-l), 0.5);
+    }
   }
 .base {
   font-size: 0.6em;

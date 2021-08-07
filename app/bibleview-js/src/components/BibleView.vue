@@ -92,7 +92,7 @@ export default {
     const scroll = useScroll(config, appSettings, calculatedConfig, verseHighlight, documentPromise);
     const {scrollToId} = scroll;
     provide("scroll", scroll);
-    const globalBookmarks = useGlobalBookmarks(config, documentType);
+    const globalBookmarks = useGlobalBookmarks(config);
     const android = useAndroid(globalBookmarks, config);
 
     const modal = useModal(android);
@@ -185,7 +185,6 @@ export default {
 
     const contentStyle = computed(() => {
       const textColor = Color(appSettings.nightMode ? config.colors.nightTextColor: config.colors.dayTextColor);
-      const backgroundColor = Color(appSettings.nightMode ? config.colors.nightBackground: config.colors.dayBackground);
 
       let style = `
           max-width: ${config.marginSize.maxWidth}mm;
@@ -199,7 +198,6 @@ export default {
           font-family: ${config.fontFamily};
           font-size: ${config.fontSize}px;
           --font-size: ${config.fontSize}px;
-          --background-color: ${backgroundColor.hsl().string()};
           `;
       if(config.marginSize.marginLeft || config.marginSize.marginRight) {
         style += `
@@ -219,12 +217,23 @@ export default {
     });
 
     const topStyle = computed(() => {
+      const backgroundColor = Color(appSettings.nightMode ? config.colors.nightBackground: config.colors.dayBackground);
       const noiseOpacity = appSettings.nightMode ? config.colors.nightNoise : config.colors.dayNoise;
+      const textColor = Color(appSettings.nightMode ? config.colors.nightTextColor : config.colors.dayTextColor);
+      const verseNumberColor = appSettings.nightMode ?
+        textColor.fade(0.5).hsl().string():
+        textColor.fade(0.5).hsl().string();
       return `
           --bottom-offset: ${appSettings.bottomOffset}px;
           --top-offset: ${appSettings.topOffset}px;
           --noise-opacity: ${noiseOpacity/100};
           --text-max-width: ${config.marginSize.maxWidth}mm;
+          --text-color: ${textColor.hsl().string()};
+          --text-color-h: ${textColor.hsl().color[0]};
+          --text-color-s: ${textColor.hsl().color[1]}%;
+          --text-color-l: ${textColor.hsl().color[2]}%;
+          --verse-number-color: ${verseNumberColor};
+          --background-color: ${backgroundColor.hsl().string()};
           `;
     });
 

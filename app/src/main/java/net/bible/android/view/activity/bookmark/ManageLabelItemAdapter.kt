@@ -54,9 +54,14 @@ class ManageLabelItemAdapter(context: Context?,
                 LabelCategory.RECENT -> manageLabels.getString(R.string.recent_labels)
                 LabelCategory.OTHER -> manageLabels.getString(R.string.other_labels)
             }
+            bindings.root.setOnClickListener(null)
+            bindings.root.setBackgroundResource(R.color.transparent)
+
         }
         else if(label is BookmarkEntities.Label) {
             bindings.apply {
+                root.setBackgroundResource(R.drawable.selectable_background)
+
                 labelCategory.visibility = View.VISIBLE
                 categoryTitle.visibility = View.GONE
                 labelName.text = label.displayName

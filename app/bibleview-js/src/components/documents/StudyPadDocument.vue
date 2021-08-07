@@ -175,14 +175,14 @@ export default {
     }
 
     function appendNewEntry() {
+      adding.value = true;
       android.createNewJournalEntry(label.id, lastEntry.value.type, lastEntry.value.id);
     }
 
-    const appSettings = inject("appSettings");
-
     const labelNameStyle = computed(() => {
-      const color = adjustedColorOrig(label.style.color).alpha(appSettings.nightMode ? 0.8: 0.3).hsl().string();
-      return `background-color: ${color};`;
+      const color = adjustedColorOrig(label.style.color);
+      const textColor = color.isLight() ? "var(--label-text-black)": "var(--label-text-white)";
+      return `background-color: ${color.string()}; color: ${textColor};`;
     });
 
     function studyPadOrdinal(journalEntry) {
@@ -205,9 +205,10 @@ export default {
 @import "~@/common.scss";
 
 div.journal-name {
-  padding-top: 15px;
-  padding-bottom: 15px;
-  margin-bottom: 30px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  padding-left: 5px;
+  margin-bottom: 10px;
   line-height: normal;
   font-size: 180%;
   border-radius: 10px;
