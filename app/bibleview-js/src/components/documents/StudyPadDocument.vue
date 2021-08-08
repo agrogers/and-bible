@@ -179,11 +179,10 @@ export default {
       android.createNewJournalEntry(label.id, lastEntry.value.type, lastEntry.value.id);
     }
 
-    const appSettings = inject("appSettings");
-
     const labelNameStyle = computed(() => {
-      const color = adjustedColorOrig(label.style.color).alpha(appSettings.nightMode ? 0.8: 0.3).hsl().string();
-      return `background-color: ${color};`;
+      const color = adjustedColorOrig(label.style.color);
+      const textColor = color.isLight() ? "var(--label-text-black)": "var(--label-text-white)";
+      return `background-color: ${color.string()}; color: ${textColor};`;
     });
 
     function studyPadOrdinal(journalEntry) {

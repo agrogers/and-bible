@@ -46,7 +46,7 @@ const allStyleRanges = computed(() => {
     return allStyles;
 });
 
-export function useGlobalBookmarks() {
+export function useGlobalBookmarks(config) {
     const bookmarkLabels = reactive(new Map());
     const bookmarks = reactive(new Map());
     const bookmarkIdsByOrdinal = reactive(new Map());
@@ -112,11 +112,12 @@ export function useGlobalBookmarks() {
         updateBookmarks(...bookmarks)
     });
 
-    setupEventBusListener(Events.BOOKMARK_NOTE_MODIFIED, ({id, notes}) => {
+    setupEventBusListener(Events.BOOKMARK_NOTE_MODIFIED, ({id, notes, lastUpdatedOn}) => {
         const b = bookmarks.get(id);
         if(b) {
             b.notes = notes;
             b.hasNote = !!notes;
+            b.lastUpdatedOn = lastUpdatedOn
         }
     });
 
@@ -131,7 +132,10 @@ export function useGlobalBookmarks() {
     return {
         bookmarkLabels,
         bookmarkMap: bookmarks,
-        bookmarks: computed(() => Array.from(bookmarks.values())),
+        bookmarks: computed(() => {
+            if(config.disableBookmarking) return [];
+            return Array.from(bookmarks.values());
+        }),
         labelsUpdated,
         updateBookmarkLabels, updateBookmarks, allStyleRanges, clearBookmarks, bookmarkIdsByOrdinal,
     }
@@ -424,16 +428,20 @@ export function useBookmarks(documentId,
     }
 
     function underlineStyleForLabels(labels, underlineLabelCount) {
-    // No longer used.
-        if(labels.length === 0) return "";
+            if(labels.length === 0) return "";
 
-        const label = labels.filter(l => l.label.isRealLabel)[0] || labels[0];
-        const color = new Color(label.label.color).hsl().string();
-        if(labels.length === 1 && underlineLabelCount.get(labels[0].id) === 1) {
-            return `text-decoration: underline; text-decoration-style: solid; text-decoration-color: ${color};`;
-        } else {
-            return `text-decoration: underline; text-decoration-style: double; text-decoration-color: ${color};`;
-        }
+            const label = labels.filter(l => l.label.isRealLabel)[0] || labels[0];
+            const color = new Color(label.label.color).hsl().string();
+            let baseDecoration = `text-decoration: underline; text-decoration-style: solid; text-decoration-color: ${color};`;
+            if(labels.length === 1 && underlineLabelCount.get(labels[0].id) === 1) {
+                return baseDecoration;
+            } else {
+                const label2 = (label == labels[0]) ? labels[1] : labels[0];
+                const color2 = new Color(label2.label.color).hsl().string();
+                const borderStyle = (labels.length === 2) ? 'solid' : 'double';
+                const borderWidth = (labels.length === 2) ? '0.1em' : '0.25em';
+                return `${baseDecoration}; border-bottom: ${borderWidth} ${borderStyle} ${color2};`;
+            }
     }
 
     function blendingStyleForLabels(bookmarkLabels, labelCount) {

@@ -20,11 +20,9 @@ package net.bible.android.control.page
 import android.app.Activity
 import android.content.Intent
 import android.util.Log
-import android.view.Menu
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import net.bible.android.activity.R
 import net.bible.android.database.WorkspaceEntities
 import net.bible.android.misc.OsisFragment
 import net.bible.android.view.activity.base.ActivityBase
@@ -66,7 +64,9 @@ class CurrentGeneralBookPage internal constructor(
             when (currentDocument) {
                 FakeBookFactory.journalDocument -> {
                     val result = context.awaitIntent(Intent(context, ManageLabels::class.java)
-                        .putExtra("data", ManageLabels.ManageLabelsData(mode = ManageLabels.Mode.STUDYPAD).toJSON())
+                        .putExtra("data", ManageLabels.ManageLabelsData(mode = ManageLabels.Mode.STUDYPAD)
+                            .applyFrom(_mainBibleActivity?.workspaceSettings)
+                            .toJSON())
                     )
                     if(result?.resultCode == Activity.RESULT_OK) {
                         val resultData = ManageLabels.ManageLabelsData.fromJSON(result.resultData.getStringExtra("data")!!)
@@ -96,9 +96,9 @@ class CurrentGeneralBookPage internal constructor(
                             OsisFragment(SwordContentFacade.readOsisFragment(it.document, it.key), it.key, it.document)
                         } catch (e: OsisError) {
                             Log.e(TAG, "Fragment could not be read")
-                            null
+                            OsisFragment(e.xml, it.key, it.document)
                         }
-                    }.filterNotNull()
+                    }
                     MultiFragmentDocument(frags)
                 }
                 else -> super.currentPageContent

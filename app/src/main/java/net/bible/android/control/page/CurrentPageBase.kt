@@ -18,7 +18,6 @@
 package net.bible.android.control.page
 
 import android.util.Log
-import android.view.Menu
 import net.bible.android.BibleApplication.Companion.application
 import net.bible.android.activity.R
 import net.bible.android.control.PassageChangeMediator
@@ -26,6 +25,7 @@ import net.bible.android.database.WorkspaceEntities
 import net.bible.android.misc.OsisFragment
 import net.bible.service.common.CommonUtils
 import net.bible.service.download.FakeBookFactory
+import net.bible.service.download.doesNotExist
 import net.bible.service.sword.DocumentNotFound
 import net.bible.service.sword.OsisError
 import net.bible.service.sword.SwordContentFacade
@@ -34,6 +34,7 @@ import org.crosswire.common.activate.Activator
 import org.crosswire.jsword.book.Book
 import org.crosswire.jsword.passage.Key
 import org.crosswire.jsword.passage.NoSuchKeyException
+import org.crosswire.jsword.passage.VerseRange
 
 /** Common functionality for different document page types
  *
@@ -87,15 +88,13 @@ abstract class CurrentPageBase protected constructor(
 
     /** notify mediator that page has changed and a lot of things need to update themselves
      */
-    protected fun beforePageChange() {
-        if (!isInhibitChangeNotifications) {
-            PassageChangeMediator.getInstance().onBeforeCurrentPageChanged()
-        }
+    private fun beforePageChange() {
+        PassageChangeMediator.getInstance().onBeforeCurrentPageChanged()
     }
 
     /** notify mediator that page has changed and a lot of things need to update themselves
      */
-    protected fun pageChange() {
+    private fun pageChange() {
         if (!isInhibitChangeNotifications) {
             PassageChangeMediator.getInstance().onCurrentPageChanged()
         }
@@ -126,16 +125,25 @@ abstract class CurrentPageBase protected constructor(
         return if(key == null) errorDocument else getPageContent(key)
     }
 
+    var annotateKey: VerseRange? = null
+
+    override val displayKey get() = annotateKey ?: key
+
     override fun getPageContent(key: Key): Document {
         return try {
             val currentDocument = currentDocument!!
+
+            val frag = synchronized(currentDocument) {
+                val frag = SwordContentFacade.readOsisFragment(currentDocument, key)
+                OsisFragment(frag, key, currentDocument)
+            }
+
+            annotateKey = frag.annotateRef
+
             OsisDocument(
                 book = currentDocument,
                 key = key,
-                osisFragment = synchronized(currentDocument) {
-                    val frag = SwordContentFacade.readOsisFragment(currentDocument, key)
-                    OsisFragment(frag, key, currentDocument)
-                }
+                osisFragment = frag
             )
         } catch (e: Exception) {
             Log.e(TAG, "Error getting bible text", e)
@@ -150,13 +158,17 @@ abstract class CurrentPageBase protected constructor(
     private val errorDocument: ErrorDocument get() =
         ErrorDocument(application.getString(R.string.error_occurred), ErrorSeverity.ERROR)
 
-    override fun checkCurrentDocumentStillInstalled(): Boolean {
-        if (_currentDocument != null) {
-            Log.d(TAG, "checkCurrentDocumentStillInstalled:$currentDocument")
-            // this sets currentDoc to null if it does not exist
-            _currentDocument = swordDocumentFacade.getDocumentByInitials(_currentDocument!!.initials)
+    override fun checkCurrentDocumenInstalled(): Boolean {
+        if(_currentDocument?.doesNotExist == true) {
+            val doc = swordDocumentFacade.getDocumentByInitials(_currentDocument!!.initials)
+            if(doc != null)
+            _currentDocument = doc
         }
-        return _currentDocument != null
+        if (_currentDocument == null) {
+            Log.d(TAG, "checkCurrentDocumentStillInstalled:$currentDocument")
+            _currentDocument =  FakeBookFactory.giveDoesNotExist(_currentDocument!!.initials)
+        }
+        return _currentDocument != null && !_currentDocument!!.doesNotExist
     }
 
     private var _currentDocument: Book? = null

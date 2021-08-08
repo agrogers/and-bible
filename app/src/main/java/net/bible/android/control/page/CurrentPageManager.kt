@@ -176,7 +176,6 @@ open class CurrentPageManager @Inject constructor(
         return nextPage
     }
 
-    @JvmOverloads
     fun setCurrentDocumentAndKey(currentBook: Book?,
                                  key: Key,
                                  updateHistory: Boolean = true,
@@ -192,6 +191,8 @@ open class CurrentPageManager @Inject constructor(
                 nextPage.setKey(key)
                 nextPage.anchorOrdinal = anchorOrdinal
                 currentPage = nextPage
+            }catch (e: Exception) {
+                Log.e(TAG, "Error setting next page doc")
             } finally {
                 nextPage.isInhibitChangeNotifications = false
             }

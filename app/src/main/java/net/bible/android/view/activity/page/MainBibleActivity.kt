@@ -594,7 +594,6 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
                 val prefOptions = dummyStrongsPrefOption
                 prefOptions.value = (prefOptions.value as Int + 1) % 3
                 prefOptions.handle()
-                invalidateOptionsMenu()
                 updateStrongsButton()
             }
 
@@ -621,7 +620,6 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
                 true
             }
             searchButton.setOnClickListener { startActivityForResult(searchControl.getSearchIntent(documentControl.currentDocument), STD_REQUEST_CODE) }
-            bookmarkButton.setOnClickListener { startActivityForResult(Intent(this@MainBibleActivity, Bookmarks::class.java), STD_REQUEST_CODE) }
         }
     }
 
@@ -687,7 +685,7 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
 
             ABEventBus.getDefault().post(ToastEvent(windowRepository.name))
 
-            invalidateOptionsMenu()
+            updateBottomBars()
             updateTitle()
         }
 
@@ -782,14 +780,12 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
             if(itemOptions is Preference) {
                 windowRepository.updateWindowTextDisplaySettingsValues(setOf(itemOptions.type), windowRepository.textDisplaySettings)
             }
-            invalidateOptionsMenu()
         } else {
             val onReady = {
                 if(itemOptions is Preference) {
                     windowRepository.updateWindowTextDisplaySettingsValues(setOf(itemOptions.type), windowRepository.textDisplaySettings)
                 }
                 windowRepository.updateAllWindowsTextDisplaySettings()
-                invalidateOptionsMenu()
             }
             val onReset = {
                 if(itemOptions is Preference) {
@@ -809,7 +805,7 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
     private val pageTitleText: String
         get() {
             val doc = pageControl.currentPageManager.currentPage.currentDocument
-            var key = pageControl.currentPageManager.currentPage.key
+            var key = pageControl.currentPageManager.currentPage.displayKey
             val isBible = doc?.bookCategory == BookCategory.BIBLE
             if(isBible) {
                 key = pageControl.currentBibleVerse
@@ -960,27 +956,19 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
                 } else View.GONE
             }
 
-            fun addBookmarks() {
-                bookmarkButton.visibility = if (visibleButtonCount < maxButtons) {
-                    visibleButtonCount += 1
-                    View.VISIBLE
-                } else View.GONE
-            }
-
             val speakLastUsed = preferences.getLong("speak-last-used", 0)
             val searchLastUsed = preferences.getLong("search-last-used", 0)
-            val bookmarksLastUsed = preferences.getLong("bookmarks-last-used", 0)
 
-            val funs = arrayListOf(Pair(speakLastUsed, {addSpeak()}),
+            val funs = arrayListOf(
+                Pair(speakLastUsed, {addSpeak()}),
                 Pair(searchLastUsed, {addSearch()}),
-                Pair(bookmarksLastUsed, {addBookmarks()}))
+            )
             funs.sortBy { -it.first }
 
             for(p in funs) {
                 p.second()
             }
 
-            invalidateOptionsMenu()
             if(!showSpeak && transportBarVisible && speakControl.isStopped) {
                 transportBarVisible = false
                 updateBottomBars()
@@ -1283,7 +1271,7 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
     }
 
     fun updateDocuments() {
-        documentControl.checkIfAnyPageDocumentsDeleted()
+        windowControl.windowSync.reloadAllWindows(true)
         updateActions()
     }
 
@@ -1333,7 +1321,6 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
                         windowRepository.updateAllWindowsTextDisplaySettings()
                     }
                     resetSystemUi()
-                    invalidateOptionsMenu()
                 }
                 TEXT_DISPLAY_SETTINGS_CHANGED -> {
                     val edited = extras.getBoolean("edited")

@@ -21,7 +21,6 @@ package net.bible.android.view.activity.page
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
-import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.graphics.Rect
@@ -58,7 +57,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import kotlinx.serialization.serializer
-import net.bible.android.BibleApplication
 import net.bible.android.activity.R
 import net.bible.android.common.toV11n
 import net.bible.android.control.bookmark.BookmarkAddedOrUpdatedEvent
@@ -79,7 +77,6 @@ import net.bible.android.control.link.LinkControl
 import net.bible.android.control.page.BibleDocument
 import net.bible.android.control.page.ClientBookmark
 import net.bible.android.control.page.ClientBookmarkLabel
-import net.bible.android.control.page.CurrentBiblePage
 import net.bible.android.control.page.Document
 import net.bible.android.control.page.DocumentCategory
 import net.bible.android.control.page.DocumentWithBookmarks
@@ -97,9 +94,11 @@ import net.bible.android.database.bookmarks.BookmarkEntities
 import net.bible.android.database.bookmarks.KJVA
 import net.bible.android.database.json
 import net.bible.android.view.activity.base.DocumentView
+import net.bible.android.view.activity.base.IntentHelper
 import net.bible.android.view.activity.base.SharedActivityState
 import net.bible.android.view.activity.bookmark.ManageLabels
 import net.bible.android.view.activity.bookmark.updateFrom
+import net.bible.android.view.activity.download.DownloadActivity
 import net.bible.android.view.activity.page.screen.AfterRemoveWebViewEvent
 import net.bible.android.view.activity.page.screen.PageTiltScroller
 import net.bible.android.view.activity.page.screen.RestoreButtonsVisibilityChanged
@@ -556,7 +555,7 @@ class BibleView(val mainBibleActivity: MainBibleActivity,
 
     class BibleLink(val type: String, val target: String, private val v11nName: String? = null) {
         val versification: Versification get() =
-            Versifications.instance().getVersification(v11nName ?: SystemKJVA.V11N_NAME)
+            Versifications.instance().getVersification(v11nName ?: SystemKJVA.V11N_NAME) ?: KJVA
         val url: String get() {
             return when(type) {
                 "content" -> "$type:$target"
@@ -659,6 +658,7 @@ class BibleView(val mainBibleActivity: MainBibleActivity,
     }
 
     object UriConstants {
+        const val SCHEME_DOWNLOAD = "download"
         const val SCHEME_ERROR = "ab-error"
         const val SCHEME_W = "ab-w"
         const val SCHEME_REFERENCE = "osis"
@@ -772,8 +772,8 @@ class BibleView(val mainBibleActivity: MainBibleActivity,
         }
         UriConstants.SCHEME_MYNOTES -> {
             val ordinal = uri.getQueryParameter("ordinal")?.toInt()!!
-            val bookInitials = uri.getQueryParameter("bookInitials")
-            linkControl.openMyNotes(bookInitials, ordinal)
+            val v11n = uri.getQueryParameter("v11n")
+            linkControl.openMyNotes(v11n!!, ordinal)
         }
         UriConstants.MULTI_REFERENCE -> {
             val osisRefs = uri.getQueryParameters("osis")
@@ -808,6 +808,14 @@ class BibleView(val mainBibleActivity: MainBibleActivity,
         }
         UriConstants.SCHEME_ERROR -> {
             linkControl.errorLink()
+            true
+        }
+        UriConstants.SCHEME_DOWNLOAD -> {
+            val initials = uri.getQueryParameter("initials")
+
+            val intent = Intent(MainBibleActivity.mainBibleActivity, DownloadActivity::class.java)
+            intent.putExtra("search", initials)
+            mainBibleActivity.startActivityForResult(intent, IntentHelper.UPDATE_SUGGESTED_DOCUMENTS_ON_FINISH)
             true
         }
         else -> {
@@ -1223,7 +1231,7 @@ class BibleView(val mainBibleActivity: MainBibleActivity,
 
     fun onEvent(event: BookmarkNoteModifiedEvent) {
         executeJavascriptOnUiThread("""
-            bibleView.emit("bookmark_note_modified", {id: ${event.bookmarkId}, notes: ${json.encodeToString(serializer(), event.notes)}});
+            bibleView.emit("bookmark_note_modified", {id: ${event.bookmarkId}, lastUpdatedOn: ${event.lastUpdatedOn}, notes: ${json.encodeToString(serializer(), event.notes)}});
         """.trimIndent())
     }
 
@@ -1446,12 +1454,12 @@ class BibleView(val mainBibleActivity: MainBibleActivity,
 
     fun requestPreviousChapter(callId: Long) = GlobalScope.launch(Dispatchers.IO) {
         Log.d(TAG, "requestMoreTextAtTop")
-        val currentPage = window.pageManager.currentPage
-        if (currentPage is CurrentBiblePage) {
+        if (firstDocument is BibleDocument) {
             val newChap = minChapter - 1
 
             if(newChap < 1) return@launch
 
+            val currentPage = window.pageManager.currentBible
             val doc = currentPage.getDocumentForChapter(newChap)
             addChapter(newChap)
             executeJavascriptOnUiThread("bibleView.response($callId, ${doc.asJson});")
@@ -1460,9 +1468,9 @@ class BibleView(val mainBibleActivity: MainBibleActivity,
 
     fun requestNextChapter(callId: Long) = GlobalScope.launch(Dispatchers.IO) {
         Log.d(TAG, "requestMoreTextAtEnd")
-        val currentPage = window.pageManager.currentPage
-        if (currentPage is CurrentBiblePage) {
+        if (firstDocument is BibleDocument) {
             val newChap = maxChapter + 1
+            val currentPage = window.pageManager.currentBible
             val verse = currentPage.currentBibleVerse.verse
             val lastChap = verse.versification.getLastChapter(verse.book)
 
@@ -1485,13 +1493,13 @@ class BibleView(val mainBibleActivity: MainBibleActivity,
 
     var modalOpen = false
 
-    private fun closeModal() {
+    private fun closeModals() {
         executeJavascriptOnUiThread("bibleView.emit('close_modals')")
     }
 
     fun backButtonPressed(): Boolean {
         if(modalOpen) {
-            closeModal()
+            closeModals()
             return true;
         }
         return false

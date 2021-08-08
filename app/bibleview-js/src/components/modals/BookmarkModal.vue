@@ -29,7 +29,7 @@
       </div>
     </template>
 
-    <template #buttons>
+    <template #extra-buttons>
       <div class="modal-action-button" @click="toggleInfo" @touchstart="toggleInfo">
         <template v-if="infoShown">
           <FontAwesomeIcon icon="edit"/>
@@ -37,9 +37,6 @@
         <template v-else>
           <FontAwesomeIcon icon="info-circle"/>
         </template>
-      </div>
-      <div class="modal-action-button right" @touchstart.stop @click.stop="closeBookmark">
-        <FontAwesomeIcon icon="times"/>
       </div>
     </template>
 
@@ -65,7 +62,7 @@
       <div class="links">
         <div class="link-line">
           <span class="link-icon"><FontAwesomeIcon icon="file-alt"/></span>
-          <a :href="`my-notes://?ordinal=${bookmark.originalOrdinalRange[0]}&bookInitials=${bookmark.bookInitials}`">{{ strings.openMyNotes }}</a>
+          <a :href="`my-notes://?ordinal=${bookmark.originalOrdinalRange[0]}&v11n=${bookmark.v11n}`">{{ strings.openMyNotes }}</a>
         </div>
         <div v-for="label in labels.filter(l => l.isRealLabel)" :key="`label-${bookmark.id}-${label.id}`" class="link-line">
           <span class="link-icon" :style="`color: ${adjustedColor(label.color).string()};`"><FontAwesomeIcon icon="file-alt"/></span>
@@ -94,7 +91,7 @@ import Modal from "@/components/modals/Modal";
 import {Events, setupEventBusListener} from "@/eventbus";
 import {computed, ref} from "@vue/reactivity";
 import {useCommon} from "@/composables";
-import {inject, nextTick} from "@vue/runtime-core";
+import {inject, provide, nextTick} from "@vue/runtime-core";
 import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
 import EditableText from "@/components/EditableText";
 import LabelList from "@/components/LabelList";
@@ -114,6 +111,7 @@ export default {
     const bookmarkId = ref(null);
     const labelList = ref(null);
     const locateTop = ref(false);
+    provide("locateTop", locateTop);
 
     const {bookmarkMap, bookmarkLabels} = inject("globalBookmarks");
 

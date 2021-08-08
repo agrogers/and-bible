@@ -67,7 +67,7 @@ export default {
     function labelStyle(label) {
       const color = adjustedColor(label.color);
       if (isAssigned(label.id)) {
-        const textColor = color.isLight() ? "black": "white";
+        const textColor = color.isLight() ? "var(--label-text-black)": "var(--label-text-white)";
         return `background-color: ${color.string()}; color: ${textColor};`;
       } else {
         return `border-color: ${color.string()};`;
@@ -124,6 +124,8 @@ export default {
 
     const {waitForClick} = clickWaiter(props.handleTouch);
 
+    const locateTop = inject("locateTop", ref(true));
+
     async function labelClicked(event, label) {
       if(props.disableLinks) return;
       if(!await waitForClick(event)) return;
@@ -131,7 +133,7 @@ export default {
       if(!isAssigned(label.id)) {
         android.toggleBookmarkLabel(bookmark.value.id, label.id);
       } else if(!props.onlyAssign) {
-        actions.value.showActions()
+        actions.value.showActions({locateTop: locateTop.value})
       } else {
         if(isAssigned(label.id) && !isPrimary(label)) {
           android.setAsPrimaryLabel(bookmark.value.id, label.id);
