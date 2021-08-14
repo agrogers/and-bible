@@ -34,8 +34,8 @@ import {library} from "@fortawesome/fontawesome-svg-core";
 import {bcv_parser as BcvParser} from "bible-passage-reference-parser/js/en_bcv_parser.min";
 import {
     faArrowsAltV,
-    faBookmark, faChevronCircleDown,
-    faEdit, faEllipsisH, faEye, faEyeSlash,
+    faBookmark, faChevronCircleDown, faCompressArrowsAlt,
+    faEdit, faEllipsisH, faExpandArrowsAlt, faEye, faEyeSlash,
     faFileAlt, faFireAlt, faHandPointer,
     faHeadphones, faHeart, faHistory,
     faIndent, faInfoCircle, faOutdent, faPlus,
@@ -113,11 +113,6 @@ export function useVerseNotifier(config, calculatedConfig, mounted, {scrolledToO
     return {currentVerse}
 }
 
-export const bookmarkingModes = {
-    verticalColorBars: 0,
-    blend: 1,
-}
-
 export const strongsModes = {
     off: 0,
     inline: 1,
@@ -131,7 +126,6 @@ const black = -16777216;
 export function useConfig(documentType) {
     // text display settings only here. TODO: rename
     const config = reactive({
-        bookmarkingMode: bookmarkingModes.verticalColorBars,
         developmentMode,
         testMode,
 
@@ -379,6 +373,8 @@ export function useFontAwesome() {
     library.add(customWholeVerseFalse)
     library.add(customWholeVerseTrue)
     library.add(customNoteFalse)
+    library.add(faCompressArrowsAlt);
+    library.add(faExpandArrowsAlt);
     library.add(faArrowsAltV)
     library.add(faTextWidth)
     library.add(faHeadphones)
