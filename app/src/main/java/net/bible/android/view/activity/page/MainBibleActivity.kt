@@ -21,9 +21,11 @@ package net.bible.android.view.activity.page
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
 import android.text.Html
@@ -85,14 +87,12 @@ import net.bible.android.database.WorkspaceEntities
 import net.bible.android.database.WorkspaceEntities.TextDisplaySettings
 import net.bible.android.view.activity.DaggerMainBibleActivityComponent
 import net.bible.android.view.activity.MainBibleActivityModule
-import net.bible.android.view.activity.base.ActivityBase
 import net.bible.android.view.activity.base.CurrentActivityHolder
 import net.bible.android.view.activity.base.CustomTitlebarActivityBase
 import net.bible.android.view.activity.base.Dialogs
 import net.bible.android.view.activity.base.IntentHelper
 import net.bible.android.view.activity.base.SharedActivityState
 import net.bible.android.view.activity.bookmark.Bookmarks
-import net.bible.android.view.activity.navigation.ChooseDictionaryWord
 import net.bible.android.view.activity.navigation.ChooseDocument
 import net.bible.android.view.activity.navigation.GridChoosePassageBook
 import net.bible.android.view.activity.navigation.History
@@ -189,7 +189,6 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
     // Bottom offset with navigation bar and transport bar and window buttons
     val bottomOffset3 get() = bottomOffset2 + if (restoreButtonsVisible) windowButtonHeight else 0
 
-    private val preferences get() = CommonUtils.settings
     private val restoreButtonsVisible get() = preferences.getBoolean("restoreButtonsVisible", false)
 
     private var isPaused = false
@@ -229,6 +228,7 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
         BackupControl.clearBackupDir()
 
         windowRepository.initialize()
+        ABEventBus.getDefault().post(ToastEvent(windowRepository.name))
 
         runOnUiThread {
             postInitialize()
@@ -303,7 +303,6 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
         setupToolbarFlingDetection()
         setSoftKeyboardMode()
 
-        refreshScreenKeepOn()
         if(!initialized)
             requestSdcardPermission()
 
@@ -541,6 +540,10 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
     private var lastBackPressed: Long? = null
 
     override fun onBackPressed() {
+        if(fullScreen) {
+            toggleFullScreen()
+            return
+        }
         val lastBackPressed = lastBackPressed
         if (binding.drawerLayout.isDrawerVisible(GravityCompat.START)) {
             binding.drawerLayout.closeDrawers()
@@ -598,8 +601,12 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
             }
 
             strongsButton.setOnLongClickListener {
-                startActivityForResult(Intent(this@MainBibleActivity, ChooseDictionaryWord::class.java), STD_REQUEST_CODE)
-                true
+                val prefOptions = dummyStrongsPrefOption
+                fun apply() {
+                    prefOptions.handle()
+                    updateStrongsButton()
+                }
+                prefOptions.openDialog(this@MainBibleActivity, onChanged = {apply()}, onReset = {apply()})
             }
 
             speakButton.setOnClickListener {
@@ -1120,15 +1127,6 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
 
     class UpdateRestoreWindowButtons
 
-    private fun refreshScreenKeepOn() {
-        val keepOn = preferences.getBoolean(SCREEN_KEEP_ON_PREF, false)
-        if (keepOn) {
-            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        } else {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        }
-    }
-
     override fun onDestroy() {
         documentViewManager.removeView()
         bibleViewFactory.clear()
@@ -1159,7 +1157,6 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
      */
     override fun onRestart() {
         super.onRestart()
-        refreshScreenKeepOn()
         if (mWholeAppWasInBackground) {
             mWholeAppWasInBackground = false
             refreshIfNightModeChange()
@@ -1376,6 +1373,21 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
 
     }
 
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        val am = getSystemService(Context.AUDIO_SERVICE) as AudioManager?
+        if(listOf(KeyEvent.KEYCODE_VOLUME_DOWN, KeyEvent.KEYCODE_VOLUME_UP).contains(keyCode) && !speakControl.isSpeaking && am?.isMusicActive != true) {
+            return when (keyCode) {
+                KeyEvent.KEYCODE_VOLUME_DOWN ->
+                    windowControl.activeWindow.bibleView?.volumeDownPressed()?: false
+                KeyEvent.KEYCODE_VOLUME_UP ->
+                    windowControl.activeWindow.bibleView?.volumeUpPressed()?: false
+                else -> super.onKeyDown(keyCode, event)
+            }
+        }
+
+        return super.onKeyDown(keyCode, event)
+    }
+
     private fun workspaceSettingsChanged(settingsBundle: SettingsBundle, requiresReload: Boolean = false,
                                          reset: Boolean = false, dirtyTypes: Set<TextDisplaySettings.Types>? = null) {
         val windowId = settingsBundle.windowId
@@ -1510,7 +1522,6 @@ class MainBibleActivity : CustomTitlebarActivityBase() {
         const val WORKSPACE_CHANGED = 94
 
 
-        private const val SCREEN_KEEP_ON_PREF = "screen_keep_on_pref"
         private const val REQUEST_SDCARD_PERMISSION_PREF = "request_sdcard_permission_pref"
 
         private const val TAG = "MainBibleActivity"

@@ -35,6 +35,7 @@ import android.widget.ListView
 import android.widget.TextView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
@@ -157,6 +158,8 @@ class ManageLabels : ListActivityBase() {
         saveAndExit()
     }
 
+    var highlightLabel: BookmarkEntities.Label? = null
+
     @SuppressLint("MissingSuperCall")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState, false)
@@ -185,7 +188,21 @@ class ManageLabels : ListActivityBase() {
 
         listView.choiceMode = ListView.CHOICE_MODE_MULTIPLE
         updateLabelList(fromDb = true)
+
+        val key = activeWindowPageManagerProvider.activeWindowPageManager.currentPage.key
+        if(key is StudyPadKey) {
+            highlightLabel = key.label
+        }
+
         listAdapter = ManageLabelItemAdapter(this, shownLabels, this)
+
+        highlightLabel?.also {
+            val pos = shownLabels.indexOf(it)
+            GlobalScope.launch(Dispatchers.Main) {
+                delay(100)
+                listView.smoothScrollToPosition(pos)
+            }
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -213,7 +230,7 @@ class ManageLabels : ListActivityBase() {
 
     private fun help() {
         when(data.mode) {
-            Mode.STUDYPAD -> CommonUtils.showHelp(this, listOf(R.string.help_studypads_title))
+            Mode.STUDYPAD -> CommonUtils.showHelp(this, listOf(R.string.studypads))
             Mode.MANAGELABELS -> CommonUtils.showHelp(this, listOf(R.string.help_bookmarks_title))
             Mode.ASSIGN -> help(HelpMode.ASSIGN)
             Mode.WORKSPACE -> help(HelpMode.WORKSPACE)

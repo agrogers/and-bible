@@ -132,6 +132,7 @@ export default {
       bookmarkId.value = bookmarkId_;
       originalNotes = bookmarkNotes.value;
       infoShown.value = !openNotes && (openInfo || !bookmarkNotes.value);
+      console.log({openNotes, openInfo, asdf: bookmarkNotes.value});
       editDirectly.value = !infoShown.value && !bookmarkNotes.value;
       locateTop.value = _locateTop;
       showBookmark.value = true;
@@ -160,7 +161,7 @@ export default {
     }
 
     const originalBookLink = computed(() => {
-      const prefix = bookmark.value.bookinitials ? bookmark.value.bookInitials: "";
+      const prefix = bookmark.value.bookInitials ? bookmark.value.bookInitials: "";
       const bibleUrl = encodeURI(`osis://?osis=${prefix}:${bookmark.value.osisRef}&v11n=${bookmark.value.v11n}`)
       return `<a href="${bibleUrl}">${bookmark.value.bookName || strings.defaultBook}</a>`;
     })

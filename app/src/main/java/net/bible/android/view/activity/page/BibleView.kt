@@ -997,6 +997,7 @@ class BibleView(val mainBibleActivity: MainBibleActivity,
         val favouriteLabels = json.encodeToString(serializer(), workspaceSettings.favouriteLabels)
         val recentLabels = json.encodeToString(serializer(), workspaceSettings.recentLabels.map { it.labelId })
         val hideCompareDocuments = json.encodeToString(serializer(), workspaceSettings.hideCompareDocuments)
+        val limitAmbiguousModalSize = json.encodeToString(serializer(), workspaceSettings.limitAmbiguousModalSize)
         return """
                 bibleView.emit('set_config', {
                     config: ${displaySettings.toJson()}, 
@@ -1006,7 +1007,8 @@ class BibleView(val mainBibleActivity: MainBibleActivity,
                         errorBox: $showErrorBox, 
                         favouriteLabels: $favouriteLabels, 
                         recentLabels: $recentLabels, 
-                        hideCompareDocuments: $hideCompareDocuments
+                        hideCompareDocuments: $hideCompareDocuments,
+                        limitAmbiguousModalSize: $limitAmbiguousModalSize,
                     }, 
                     initial: $initial
                     });
@@ -1331,7 +1333,7 @@ class BibleView(val mainBibleActivity: MainBibleActivity,
     
     val bottomOffset
         get() =
-            if(isBottomWindow && !SharedActivityState.instance.isFullScreen)
+            if(isBottomWindow)
                 (mainBibleActivity.bottomOffset3
                     / mainBibleActivity.resources.displayMetrics.density)
             else 0F
@@ -1503,6 +1505,16 @@ class BibleView(val mainBibleActivity: MainBibleActivity,
             return true;
         }
         return false
+    }
+
+    fun volumeUpPressed(): Boolean {
+        executeJavascriptOnUiThread("bibleView.emit('scroll_up')")
+        return true
+    }
+
+    fun volumeDownPressed(): Boolean {
+        executeJavascriptOnUiThread("bibleView.emit('scroll_down')")
+        return true
     }
 
     var onDestroy: (() -> Unit)? = null

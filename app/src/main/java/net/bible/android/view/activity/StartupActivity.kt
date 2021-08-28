@@ -37,6 +37,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.serializer
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -49,6 +50,7 @@ import net.bible.android.control.backup.BackupControl
 import net.bible.android.control.event.ABEventBus
 import net.bible.android.control.event.ToastEvent
 import net.bible.android.control.report.ErrorReportControl
+import net.bible.android.database.SwordDocumentInfo
 import net.bible.android.view.activity.base.CurrentActivityHolder
 import net.bible.android.view.activity.base.CustomTitlebarActivityBase
 import net.bible.android.view.activity.base.Dialogs
@@ -58,10 +60,12 @@ import net.bible.android.view.activity.installzip.InstallZip
 import net.bible.android.view.activity.page.MainBibleActivity
 import net.bible.android.view.util.Hourglass
 import net.bible.service.common.CommonUtils
+import net.bible.service.common.CommonUtils.json
 import net.bible.service.common.htmlToSpan
 import net.bible.service.db.DatabaseContainer
 
 import org.apache.commons.lang3.StringUtils
+import org.crosswire.jsword.book.Book
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -79,8 +83,8 @@ open class StartupActivity : CustomTitlebarActivityBase() {
     override val doNotInitializeApp = true
 
 
-    private suspend fun getListOfBooksUserWantsToRedownload(context: Context) : List<String>? {
-        var result: List<String>?;
+    private suspend fun getListOfBooksUserWantsToRedownload(context: Context) : List<SwordDocumentInfo>? {
+        var result: List<SwordDocumentInfo>?;
         withContext(Dispatchers.Main) {
             result = suspendCoroutine {
                 val books = docsDao.getKnownInstalled().sortedBy { it.language }
@@ -91,7 +95,7 @@ open class StartupActivity : CustomTitlebarActivityBase() {
                 val checkedItems = bookNames.map { true }.toBooleanArray()
                 val dialog = AlertDialog.Builder(context)
                     .setPositiveButton(R.string.okay) { d, _ ->
-                        val selectedBooks = books.filterIndexed { index, book -> checkedItems[index] }.map{ it.initials }
+                        val selectedBooks = books.filterIndexed { index, book -> checkedItems[index] }
                         if(selectedBooks.isEmpty()) {
                             it.resume(null)
                         } else {
@@ -206,15 +210,30 @@ open class StartupActivity : CustomTitlebarActivityBase() {
     }
 
     private suspend fun checkPoorTranslations(): Boolean {
-        val langCode = Locale.getDefault().language
-        val poorLanguages = listOf(
-            "xyz"
+        val languageTag = Locale.getDefault().toLanguageTag()
+        val languageCode = Locale.getDefault().language
+
+        Log.d(TAG, "Language tag $languageTag, code $languageCode")
+
+        val goodLanguages = listOf(
+            "en", "af", "my", "eo", "fi", "fr", "de", "hi", "hu", "it", "lt", "pl", "ru", "sl", "es", "uk", "zh-Hant-TW"
         )
 
-        val needCheck = poorLanguages.contains(langCode)
+        fun checkLanguage(lang: String): Boolean =
+            if(lang.length == 2)
+                lang == languageCode
+            else
+                lang == languageTag
 
-        if(!needCheck || CommonUtils.settings.getInt("poor-translations-dismissed", 0) >= CommonUtils.applicationVersionNumber)
+
+        val languageOK = goodLanguages.any {checkLanguage(it)}
+
+        if(languageOK || (
+            CommonUtils.settings.getString("poor-translations-dismissed", "") == languageTag
+            && CommonUtils.settings.getInt("poor-translations-dismissed", 0) == CommonUtils.applicationVersionNumber))
+        {
             return true
+        }
 
         return suspendCoroutine {
             val lang = Locale.getDefault().displayLanguage
@@ -228,6 +247,7 @@ open class StartupActivity : CustomTitlebarActivityBase() {
                 .setPositiveButton(R.string.proceed_anyway) { _, _ -> it.resume(true) }
                 .setNegativeButton(R.string.beta_notice_dismiss_until_update) { _, _ ->
                     CommonUtils.settings.setInt("poor-translations-dismissed", CommonUtils.applicationVersionNumber)
+                    CommonUtils.settings.setString("poor-translations-dismissed", languageTag)
                     it.resume(true)
                 }
                 .setNeutralButton(R.string.close) { _, _ ->
@@ -243,18 +263,18 @@ open class StartupActivity : CustomTitlebarActivityBase() {
     private suspend fun postBasicInitialisationControl() = withContext(Dispatchers.Main) {
         if(!checkWebView()) return@withContext
 
+        // When I mess up database, I can re-create database like this.
+        //BackupControl.resetDatabase()
+
+        initializeDatabase()
+        if(!checkPoorTranslations()) return@withContext
+
         if (swordDocumentFacade.bibles.isEmpty()) {
             Log.i(TAG, "Invoking download activity because no bibles exist")
             // only show the splash screen if user has no bibles
-            initializeDatabase()
-            if(!checkPoorTranslations()) return@withContext
             showFirstLayout()
         } else {
             Log.i(TAG, "Going to main bible view")
-
-            // When I mess up database, I can re-create database like this.
-            //BackupControl.resetDatabase()
-            initializeDatabase()
 
             gotoMainBibleActivity()
             spinnerBinding.progressText.text =getString(R.string.initializing_app)
@@ -268,34 +288,39 @@ open class StartupActivity : CustomTitlebarActivityBase() {
         val versionMsg = BibleApplication.application.getString(R.string.version_text, CommonUtils.applicationVersionName)
         startupViewBinding.versionText.text = versionMsg
 
-
-        // if a previous list of books is available to be installed,
-        // allow the user to requickly redownload them all.
-        val redownloadButton = startupViewBinding.redownloadButton
-        val redownloadTextView = startupViewBinding.redownloadMessage
-        if (previousInstallDetected) {
-            // do something
-            Log.d(TAG, "A previous install was detected")
-            redownloadTextView.text = getString(R.string.redownload_message)
-            redownloadTextView.visibility = View.VISIBLE
-            redownloadButton.setOnClickListener {
-                GlobalScope.launch(Dispatchers.Main)  {
-                    val books = getListOfBooksUserWantsToRedownload(this@StartupActivity);
-                    if (books != null) {
-                        val intentHandler = Intent(this@StartupActivity, FirstDownload::class.java);
-                        intentHandler.putExtra(DownloadActivity.DOCUMENT_IDS_EXTRA, ArrayList(books));
-                        startActivityForResult(intentHandler, DOWNLOAD_DOCUMENT_REQUEST)
+        startupViewBinding.run {
+            if (previousInstallDetected) {
+                Log.d(TAG, "A previous install was detected")
+                redownloadMessage.visibility = View.VISIBLE
+                redownloadButton.visibility = View.VISIBLE
+                redownloadButton.setOnClickListener {
+                    GlobalScope.launch(Dispatchers.Main) {
+                        val books = getListOfBooksUserWantsToRedownload(this@StartupActivity);
+                        if (books != null) {
+                            val intent = Intent(this@StartupActivity, FirstDownload::class.java)
+                            intent.putExtra(DownloadActivity.DOCUMENT_IDS_EXTRA, json.encodeToString(serializer(), books))
+                            startActivityForResult(intent, DOWNLOAD_DOCUMENT_REQUEST)
+                        }
                     }
                 }
+            } else {
+                Log.d(TAG, "Showing restore button because nothing to redownload")
+                restoreDatabaseButton.visibility = View.VISIBLE
+                restoreDatabaseButton.setOnClickListener {
+                    val intent = Intent(Intent.ACTION_GET_CONTENT)
+                    intent.type = "application/*"
+                    startActivityForResult(intent, REQUEST_PICK_FILE_FOR_BACKUP_RESTORE)
+                }
             }
-        } else {
-            Log.d(TAG, "Showing restore button because nothing to redownload")
-            // hide button because nothing to download
-            redownloadButton.text = getString(R.string.restore_database)
-            redownloadButton.setOnClickListener {
-                val intent = Intent(Intent.ACTION_GET_CONTENT)
-                intent.type = "application/*"
-                startActivityForResult(intent, REQUEST_PICK_FILE_FOR_BACKUP_RESTORE)
+            // Enabling this for english only in 4.0. Later we may enable this for other languages.
+            if(Locale.getDefault().language == "en") {
+                easyStartMessage.visibility = View.VISIBLE
+                easyStartButton.visibility = View.VISIBLE
+                easyStartButton.setOnClickListener {
+                    val intent = Intent(this@StartupActivity, FirstDownload::class.java)
+                    intent.putExtra("download-recommended", true)
+                    startActivityForResult(intent, DOWNLOAD_DOCUMENT_REQUEST)
+                }
             }
         }
 

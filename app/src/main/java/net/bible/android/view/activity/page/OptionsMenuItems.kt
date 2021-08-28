@@ -43,6 +43,7 @@ import net.bible.android.view.util.widget.LineSpacingWidget
 import net.bible.android.view.util.widget.TopMarginWidget
 import net.bible.service.common.CommonUtils
 import net.bible.service.device.ScreenSettings
+import org.crosswire.jsword.book.FeatureType
 
 interface OptionsMenuItemInterface {
     var value: Any
@@ -264,13 +265,23 @@ open class SubMenuPreference(onlyBibles: Boolean = false, enabled: Boolean = tru
 
 class NightModePreference : RealSharedPreferencesPreference("night_mode_pref", false) {
     override fun handle() { mainBibleActivity.refreshIfNightModeChange() }
-    override val visible: Boolean get() = super.visible && ScreenSettings.manualMode
+    override var value: Any
+        get() = ScreenSettings.nightMode
+        set(value) {
+            if(enabled) {
+                super.value = value
+            }
+        }
+    override val enabled: Boolean get() = ScreenSettings.manualMode
 }
 
 class MyNotesPreference (settings: SettingsBundle) : Preference(settings, TextDisplaySettings.Types.MYNOTES) {
     override val visible: Boolean get() = !pageManager.isMyNotesShown
 }
 
+class RedLettersPreference (settings: SettingsBundle) : Preference(settings, TextDisplaySettings.Types.REDLETTERS) {
+    override val enabled: Boolean get() = pageManager.isBibleShown && pageManager.currentPage.currentDocument?.hasFeature(FeatureType.WORDS_OF_CHRIST) == true
+}
 
 class StrongsPreference (settings: SettingsBundle) : Preference(settings, TextDisplaySettings.Types.STRONGS) {
     override val enabled: Boolean get() = pageManager.hasStrongs

@@ -22,7 +22,6 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
-import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.inputmethod.InputMethodManager
@@ -32,7 +31,6 @@ import android.widget.AdapterView.OnItemSelectedListener
 import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.Toast
-import androidx.appcompat.view.ActionMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -45,6 +43,7 @@ import net.bible.android.activity.databinding.DocumentSelectionBinding
 import net.bible.android.control.document.DocumentControl
 import net.bible.android.control.download.DocumentStatus
 import net.bible.android.control.download.DownloadControl
+import net.bible.android.control.download.repo
 import net.bible.android.control.event.ABEventBus
 import net.bible.android.control.event.ToastEvent
 import net.bible.android.database.DocumentSearch
@@ -115,6 +114,7 @@ abstract class DocumentSelectionBase(optionsMenuId: Int, private val actionModeM
     private var isPopulated = false
     private val dao get() = DatabaseContainer.db.documentDao()
 
+    val defaultDocuments = Ref<RecommendedDocuments>()
     val recommendedDocuments = Ref<RecommendedDocuments>()
 
     private var allDocuments = ArrayList<Book>()
@@ -262,9 +262,11 @@ abstract class DocumentSelectionBase(optionsMenuId: Int, private val actionModeM
         checkSpinnerIndexesValid()
     }
 
-    protected fun findBookByOsisID(osisId: String) : Book? {
-        return allDocuments.find {
-            it.osisID == osisId
+    protected fun findBookByInitials(initials: String, repository: String?) : Book? = allDocuments.find {
+        if(repository != null) {
+            it.initials == initials && it.repo == repository
+        } else {
+            it.initials == initials
         }
     }
 
@@ -381,7 +383,7 @@ abstract class DocumentSelectionBase(optionsMenuId: Int, private val actionModeM
 
     /** a spinner has changed so refilter the doc list
      */
-    private fun filterDocuments() {
+    fun filterDocuments() {
         if(!isPopulated) return
         // documents list has changed so force action mode to exit, if displayed, because selections are invalidated
         listActionModeHelper.exitActionMode()
@@ -405,7 +407,13 @@ abstract class DocumentSelectionBase(optionsMenuId: Int, private val actionModeM
 
                         displayedDocuments.sortWith(
                             compareBy(
-                                { downloadControl.getDocumentStatus(it).documentInstallStatus != DocumentStatus.DocumentInstallStatus.BEING_INSTALLED },
+                                {
+                                    when(downloadControl.getDocumentStatus(it).documentInstallStatus) {
+                                        DocumentStatus.DocumentInstallStatus.BEING_INSTALLED -> 0
+                                        DocumentStatus.DocumentInstallStatus.UPGRADE_AVAILABLE -> 1
+                                        else -> 2
+                                    }
+                                },
                                 { swordDocumentFacade.getDocumentByInitials(it.initials) == null },
                                 { if (lang != null) !it.isRecommended(recommendedDocuments.value) else false },
                                 {

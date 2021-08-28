@@ -23,6 +23,7 @@ import android.util.Log
 import net.bible.android.control.PassageChangeMediator
 import net.bible.android.control.bookmark.BookmarkControl
 import net.bible.android.control.page.window.Window
+import net.bible.android.control.page.window.WindowControl
 import net.bible.android.control.page.window.WindowRepository
 import net.bible.android.control.versification.BibleTraverser
 import net.bible.android.control.versification.Scripture
@@ -71,12 +72,11 @@ val BookCategory.documentCategory: DocumentCategory get() {
 }
 
 open class CurrentPageManager @Inject constructor(
-        val swordDocumentFacade: SwordDocumentFacade,
-        bibleTraverser: BibleTraverser,
-        val bookmarkControl: BookmarkControl,
-        val windowRepository: WindowRepository,
-        )
-{
+    val swordDocumentFacade: SwordDocumentFacade,
+    bibleTraverser: BibleTraverser,
+    val bookmarkControl: BookmarkControl,
+    val windowRepository: WindowRepository,
+)  {
     // use the same verse in the commentary and bible to keep them in sync
     val currentBibleVerse: CurrentBibleVerse = CurrentBibleVerse()
     val currentBible = CurrentBiblePage(currentBibleVerse, bibleTraverser, swordDocumentFacade, this)
@@ -126,6 +126,9 @@ open class CurrentPageManager @Inject constructor(
                 currentBible
             }
         }
+
+    val isStudyPadShown: Boolean
+        get() = currentGeneralBook === currentPage && currentGeneralBook.isStudyPad
 
     val isCommentaryShown: Boolean
         get() = currentCommentary === currentPage

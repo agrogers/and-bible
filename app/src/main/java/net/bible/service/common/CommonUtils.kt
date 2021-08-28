@@ -64,6 +64,7 @@ import net.bible.android.activity.BuildConfig.BuildDate
 import net.bible.android.activity.BuildConfig.GitHash
 import net.bible.android.activity.R
 import net.bible.android.activity.SpeakWidgetManager
+import net.bible.android.common.toV11n
 import net.bible.android.control.page.window.WindowControl
 import net.bible.android.database.WorkspaceEntities
 import net.bible.android.database.bookmarks.BookmarkEntities
@@ -785,7 +786,7 @@ object CommonUtils : CommonUtilsBase() {
             HelpItem(R.string.help_contextmenus_title, R.string.help_contextmenus_text),
             HelpItem(R.string.help_window_pinning_title, R.string.help_window_pinning_text, pinningHelpVideo),
             HelpItem(R.string.help_bookmarks_title, R.string.help_bookmarks_text, bookmarksMyNotesVideo), // beta video
-            HelpItem(R.string.help_studypads_title, R.string.help_studypads_text, studyPadsVideo), // beta video
+            HelpItem(R.string.studypads, R.string.help_studypads_text, studyPadsVideo), // beta video
             HelpItem(R.string.help_search_title, R.string.help_search_text),
             HelpItem(R.string.help_workspaces_title, R.string.help_workspaces_text, workspacesVideo),
             HelpItem(R.string.help_hidden_features_title, R.string.help_hidden_features_text)
@@ -817,6 +818,7 @@ object CommonUtils : CommonUtilsBase() {
 
         val d = androidx.appcompat.app.AlertDialog.Builder(callingActivity)
             .setTitle(R.string.help)
+            .setIcon(R.drawable.ic_logo)
             .setMessage(spanned)
             .setPositiveButton(android.R.string.ok) { _, _ ->  }
             .create()
@@ -909,7 +911,7 @@ object CommonUtils : CommonUtilsBase() {
 
     val defaultBible get() = Books.installed().getBooks { it.bookCategory == BookCategory.BIBLE }[0] as SwordBook
     val defaultVerse: VerseRange get() {
-        val (otVerse, ntVerse, psVerse) = listOf("Gen.1.1-Gen.1.3", "Joh.3.16-Joh.3.18", "Ps.1.1-Ps.1.3").map { VerseRangeFactory.fromString(defaultBible.versification, it) }
+        val (otVerse, ntVerse, psVerse) = listOf("Gen.1.1-Gen.1.3", "Joh.3.16-Joh.3.18", "Ps.1.1-Ps.1.3").map { VerseRangeFactory.fromString(KJVA, it).toV11n(defaultBible.versification) }
         return when {
             defaultBible.contains(ntVerse.start) -> ntVerse
             defaultBible.contains(otVerse.start) -> otVerse
@@ -1084,3 +1086,5 @@ data class LastTypesSerializer(val types: MutableList<WorkspaceEntities.TextDisp
         }
     }
 }
+
+val firstBibleDoc get() = Books.installed().books.first { it.bookCategory == BookCategory.BIBLE } as SwordBook

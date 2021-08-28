@@ -91,13 +91,22 @@ export default {
     provide("verseHighlight", verseHighlight);
     const {resetHighlights} = verseHighlight;
     const scroll = useScroll(config, appSettings, calculatedConfig, verseHighlight, documentPromise);
-    const {scrollToId} = scroll;
+    const {doScrolling, scrollToId} = scroll;
     provide("scroll", scroll);
     const globalBookmarks = useGlobalBookmarks(config);
     const android = useAndroid(globalBookmarks, config);
 
     const modal = useModal(android);
     provide("modal", modal);
+
+    let footNoteCount = 0;
+
+    function getFootNoteCount() {
+      return footNoteCount ++;
+    }
+
+    provide("footNoteCount", {getFootNoteCount});
+
     const {closeModals} = modal;
 
     const mounted = ref(false);
@@ -135,6 +144,7 @@ export default {
     })
 
     setupEventBusListener(Events.CLEAR_DOCUMENT, function clearDocument() {
+      footNoteCount = 0;
       resetHighlights();
       closeModals();
       clearLog();
@@ -240,6 +250,14 @@ export default {
     });
 
     const isLoading = computed(() => documents.length === 0 || loadingCount.value > 0);
+
+    function scrollUpDown(up = false) {
+      const amount = window.innerHeight / 2;
+      doScrolling(window.pageYOffset + (up ? -amount: amount), 500)
+    }
+
+    setupEventBusListener(Events.SCROLL_DOWN, () => scrollUpDown());
+    setupEventBusListener(Events.SCROLL_UP, () => scrollUpDown(true));
 
     return {
       direction: computed(() => appSettings.rightToLeft ? "rtl": "ltr"),
